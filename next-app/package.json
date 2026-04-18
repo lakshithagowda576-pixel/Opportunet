@@ -4,9 +4,10 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --turbopack --port 5173",
+    "dev:clean": "node ./scripts/clear-dev-lock.mjs && next dev --turbopack --port 5173",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 5173",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "typecheck": "tsc --noEmit"

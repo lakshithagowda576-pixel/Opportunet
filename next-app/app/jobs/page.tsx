@@ -11,8 +11,28 @@ import {
   Building2 
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useSearchParams } from "next/navigation"
-import { useState, useMemo, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useMemo, Suspense } from "react"
+
+type DeptTab = "All" | "IT" | "Non-IT" | "Government" | "Central Government"
+
+const DEPT_PARAM_MAP: Record<string, DeptTab> = {
+  IT: "IT",
+  "Non-IT": "Non-IT",
+  Government: "Government",
+  "Central-Government": "Central Government",
+}
+
+function deptTabFromParam(raw: string | null): DeptTab {
+  if (!raw) return "All"
+  return DEPT_PARAM_MAP[raw] ?? "All"
+}
+
+function deptQueryValue(tab: DeptTab): string | null {
+  if (tab === "All") return null
+  if (tab === "Central Government") return "Central-Government"
+  return tab
+}
 
 export default function JobsPage() {
   return (
@@ -26,20 +46,21 @@ export default function JobsPage() {
 }
 
 function JobsContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
-  const deptParam = searchParams.get('dept')
-  
-  const [activeTab, setActiveTab] = useState<'All' | 'IT' | 'Non-IT' | 'Government' | 'Central Government'>('All')
+  const deptKey = searchParams.get("dept")
+  const activeTab = useMemo(() => deptTabFromParam(deptKey), [deptKey])
+
   const [search, setSearch] = useState("")
 
-  useEffect(() => {
-    if (deptParam) {
-      const formatted = deptParam.replace('-', ' ')
-      if (['IT', 'Non-IT', 'Government', 'Central Government'].includes(formatted)) {
-        setActiveTab(formatted as any)
-      }
-    }
-  }, [deptParam])
+  function setActiveTab(tab: DeptTab) {
+    const next = new URLSearchParams(searchParams.toString())
+    const q = deptQueryValue(tab)
+    if (q) next.set("dept", q)
+    else next.delete("dept")
+    const qs = next.toString()
+    router.push(qs ? `/jobs?${qs}` : "/jobs")
+  }
 
   const filteredJobs = useMemo(() => {
     return JOBS.filter(job => {
@@ -50,12 +71,12 @@ function JobsContent() {
     })
   }, [activeTab, search])
 
-  const tabs = [
-    { id: 'All', label: 'All Careers', icon: Briefcase },
-    { id: 'IT', label: 'IT Dept', icon: Cpu },
-    { id: 'Non-IT', label: 'Non-IT', icon: Building2 },
-    { id: 'Government', label: 'State Govt', icon: Landmark },
-    { id: 'Central Government', label: 'Central Govt', icon: Building2 },
+  const tabs: { id: DeptTab; label: string; icon: typeof Briefcase }[] = [
+    { id: "All", label: "All Careers", icon: Briefcase },
+    { id: "IT", label: "IT Dept", icon: Cpu },
+    { id: "Non-IT", label: "Non-IT", icon: Building2 },
+    { id: "Government", label: "State Govt", icon: Landmark },
+    { id: "Central Government", label: "Central Govt", icon: Building2 },
   ]
 
   return (
@@ -90,7 +111,7 @@ function JobsContent() {
             {tabs.map((tab) => (
                <button
                   key={tab.id}
-                  onClick={() => setActiveTab(tab.id as any)}
+                  onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all border ${
                      activeTab === tab.id 
                      ? 'bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/20 scale-105' 
@@ -120,7 +141,10 @@ function JobsContent() {
                <Button 
                   variant="link" 
                   className="mt-4 text-primary font-bold"
-                  onClick={() => {setActiveTab('All'); setSearch("")}}
+                  onClick={() => {
+                    setSearch("")
+                    setActiveTab("All")
+                  }}
                >
                   Clear all filters
                </Button>

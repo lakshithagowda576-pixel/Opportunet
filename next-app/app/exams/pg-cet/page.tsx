@@ -5,7 +5,6 @@ import { Navbar } from "@/components/Navbar"
 import { Button } from "@/components/ui/button"
 import { 
   Calendar, 
-  MapPin, 
   FileText, 
   Download, 
   BookOpen, 
@@ -14,6 +13,7 @@ import {
   ClipboardList
 } from "lucide-react"
 import Link from "next/link"
+import { PgCetCollegeMatcher } from "@/components/PgCetCollegeMatcher"
 
 export default function PGCETPortal() {
   const exam = EXAMS[0] // Assuming one main PG-CET for now
@@ -72,6 +72,8 @@ export default function PGCETPortal() {
                 </div>
               </div>
             </section>
+
+            <PgCetCollegeMatcher />
 
             {/* Steps to Apply */}
             <section>

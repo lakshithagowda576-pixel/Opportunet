@@ -22,6 +22,7 @@ export default function JobDetails() {
   const job = JOBS.find(j => j.id === id)
   const [isApplying, setIsApplying] = useState(false)
   const [trackId, setTrackId] = useState<string | null>(null)
+  const [hrMailNote, setHrMailNote] = useState<string | null>(null)
 
   if (!job) return <div>Job not found</div>
 
@@ -193,6 +194,27 @@ export default function JobDetails() {
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-muted-foreground">HR Contacts</p>
                         <p className="text-sm font-bold truncate">{job.hrEmail}</p>
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="h-auto p-0 text-xs font-semibold text-primary"
+                          onClick={() => {
+                            void (async () => {
+                              try {
+                                await navigator.clipboard.writeText(job.hrEmail)
+                                setHrMailNote("Copied HR email.")
+                              } catch {
+                                setHrMailNote(job.hrEmail)
+                              }
+                              window.setTimeout(() => setHrMailNote(null), 3500)
+                            })()
+                          }}
+                        >
+                          Copy HR email
+                        </Button>
+                        {hrMailNote && (
+                          <p className="mt-1 text-xs text-muted-foreground break-all">{hrMailNote}</p>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-3">

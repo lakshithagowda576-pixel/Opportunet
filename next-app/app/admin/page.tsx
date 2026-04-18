@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { Navbar } from "@/components/Navbar"
 import { BarChart3, Briefcase, BookOpen, Users, Plus, Settings, ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -18,8 +17,6 @@ const mockApplications = [
 ]
 
 export default function AdminDashboard() {
-  const [selectedJob, setSelectedJob] = useState<number | null>(null)
-
   const stats = [
     { label: "Total Applications", count: 42, icon: Briefcase, color: "text-blue-600", bg: "bg-blue-500/10" },
     { label: "Pending", count: 28, icon: Users, color: "text-amber-600", bg: "bg-amber-500/10" },
@@ -77,7 +74,6 @@ export default function AdminDashboard() {
                 <div
                   key={job.id}
                   className="rounded-3xl border bg-card p-6 hover:shadow-md transition-all cursor-pointer"
-                  onClick={() => setSelectedJob(job.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div>
@@ -105,76 +101,6 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
-        </div>
-      </main>
-    </div>
-  )
-}
-                           <div className="border-t bg-secondary/20 p-6 space-y-3">
-                             {jobApps.map((app) => (
-                               <div key={app.id} className="bg-card rounded-xl p-4 flex items-center justify-between border">
-                                 <div className="flex-1">
-                                   <p className="font-semibold text-sm">{app.applicantName}</p>
-                                   <p className="text-xs text-muted-foreground">{app.applicantEmail}</p>
-                                   <p className="text-xs text-muted-foreground mt-1">Applied: {new Date(app.appliedAt).toLocaleDateString()}</p>
-                                 </div>
-                                 <div className="flex items-center gap-2">
-                                   <select
-                                     value={app.status}
-                                     onChange={(e) => handleStatusUpdate(app.id, e.target.value)}
-                                     disabled={updatingId === app.id}
-                                     className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-all ${STATUS_COLORS[app.status]} cursor-pointer disabled:opacity-50`}
-                                   >
-                                     {STATUS_OPTIONS.map((status) => (
-                                       <option key={status} value={status}>{status}</option>
-                                     ))}
-                                   </select>
-                                   {updatingId === app.id && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
-                                 </div>
-                               </div>
-                             ))}
-                           </div>
-                         )}
-
-                         {isExpanded && jobApps.length === 0 && (
-                           <div className="border-t bg-secondary/20 p-6 text-center text-muted-foreground text-sm">
-                             No applications for this job yet
-                           </div>
-                         )}
-                       </div>
-                     )
-                   })}
-                </div>
-              )}
-           </div>
-
-           {/* Platform Health */}
-           <div className="space-y-6">
-              <h2 className="text-2xl font-black">Platform Health</h2>
-
-              <div className="rounded-[2.5rem] border bg-primary p-8 text-primary-foreground shadow-xl shadow-primary/20">
-                 <h3 className="font-bold text-lg">System Status</h3>
-                 <p className="text-sm text-primary-foreground/80 mt-2">All systems are operational. Database is responsive and emails are configured.</p>
-                 <Button className="w-full mt-6 bg-white text-primary hover:bg-white/90 rounded-2xl font-bold gap-2">
-                    View Logs <ArrowUpRight className="h-4 w-4" />
-                 </Button>
-              </div>
-
-              <div className="rounded-[2.5rem] border bg-card p-6 space-y-3">
-                 <h3 className="font-bold">Status Breakdown</h3>
-                 {STATUS_OPTIONS.map((status) => {
-                   const count = applications.filter(a => a.status === status).length
-                   return (
-                     <div key={status} className="flex items-center justify-between text-sm">
-                       <span className={`px-3 py-1 rounded-lg border ${STATUS_COLORS[status as keyof typeof STATUS_COLORS]}`}>
-                         {status}
-                       </span>
-                       <span className="font-bold">{count}</span>
-                     </div>
-                   )
-                 })}
-              </div>
-           </div>
         </div>
       </main>
     </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { Navbar } from "@/components/Navbar"
-import { MOCK_APPLICATIONS, JOBS } from "@/lib/data"
+import { MOCK_APPLICATIONS, JOBS, getHrEmail, type JobListing } from "@/lib/data"
 import { 
   Users, 
   Search, 
@@ -10,13 +10,23 @@ import {
   CheckCircle, 
   XCircle,
   Clock,
-  ExternalLink
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useState } from "react"
 
+async function copyHrAddress(job: JobListing | undefined) {
+  const email = (job?.hrEmail && job.hrEmail.trim()) || getHrEmail(job ?? {})
+  try {
+    await navigator.clipboard.writeText(email)
+    return { ok: true as const, email }
+  } catch {
+    return { ok: false as const, email }
+  }
+}
+
 export default function HRDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
+  const [mailAction, setMailAction] = useState<{ appId: string; message: string } | null>(null)
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -98,8 +108,33 @@ export default function HRDashboard() {
                                    {new Date(app.appliedDate).toLocaleDateString()}
                                 </td>
                                 <td className="px-8 py-6">
+                                   <div className="flex flex-col items-end gap-1">
                                    <div className="flex items-center justify-end gap-2">
-                                      <Button variant="ghost" size="sm" className="rounded-xl h-10 px-4 font-bold text-primary hover:bg-primary/10 gap-2">
+                                      <Button
+                                         type="button"
+                                         variant="ghost"
+                                         size="sm"
+                                         className="rounded-xl h-10 px-4 font-bold text-primary hover:bg-primary/10 gap-2"
+                                         onClick={() => {
+                                            void (async () => {
+                                              const result = await copyHrAddress(job)
+                                              if (result.ok) {
+                                                setMailAction({
+                                                  appId: app.id,
+                                                  message: "HR email copied — paste it into your mail app to send.",
+                                                })
+                                              } else {
+                                                setMailAction({
+                                                  appId: app.id,
+                                                  message: `HR email: ${result.email}`,
+                                                })
+                                              }
+                                              window.setTimeout(() => {
+                                                setMailAction((cur) => (cur?.appId === app.id ? null : cur))
+                                              }, 4000)
+                                            })()
+                                         }}
+                                      >
                                          <MessageCircle className="h-4 w-4" /> Reply
                                       </Button>
                                       <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-emerald-600 hover:bg-emerald-50 content-center">
@@ -108,6 +143,12 @@ export default function HRDashboard() {
                                       <Button variant="ghost" size="icon" className="rounded-xl h-10 w-10 text-rose-600 hover:bg-rose-50">
                                          <XCircle className="h-5 w-5" />
                                       </Button>
+                                   </div>
+                                   {mailAction?.appId === app.id && (
+                                      <p className="max-w-[220px] text-right text-xs text-muted-foreground">
+                                         {mailAction.message}
+                                      </p>
+                                   )}
                                    </div>
                                 </td>
                              </tr>
