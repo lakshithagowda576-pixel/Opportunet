@@ -1,0 +1,18 @@
+packages:
+  "framer-motion": "For polished page transitions and micro-interactions"
+  "date-fns": "For formatting application and job deadlines"
+  "lucide-react": "For comprehensive iconography across the portal"
+  "clsx": "For conditional tailwind class merging"
+  "tailwind-merge": "For robust tailwind class merging"
+
+images:
+  - path: "artifacts/job-portal/public/images/hero-bg.png"
+    description: "Abstract geometric background in professional deep navy blue and bright cyan tones, subtle glowing light leaks, clean modern corporate aesthetic, smooth gradients"
+    aspect_ratio: "16:9"
+  - path: "artifacts/job-portal/public/images/logo-mark.png"
+    description: "Minimalist modern logo mark for a government and corporate job portal, combining a stylized briefcase and an upward arrow, flat vector style, navy blue and bright cyan"
+    aspect_ratio: "1:1"
+
+notes:
+  - Using generated Orval hooks from @workspace/api-client-react
+  - Simulating HR email interactions using local UI state and the backend messages endpoint

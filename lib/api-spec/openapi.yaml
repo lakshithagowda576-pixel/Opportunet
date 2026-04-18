@@ -1,0 +1,519 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Job Portal & Exam Resource Hub API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: jobs
+    description: Job listings
+  - name: applications
+    description: Job applications
+  - name: messages
+    description: HR messages
+  - name: exams
+    description: PG-CET exam resources
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List all jobs with optional filters
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [IT, NON_IT, STATE_GOVT, CENTRAL_GOVT]
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Job"
+
+  /jobs/{id}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get a single job by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications:
+    get:
+      operationId: listApplications
+      tags: [applications]
+      summary: Get all applications for the current session user
+      responses:
+        "200":
+          description: List of applications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Application"
+    post:
+      operationId: createApplication
+      tags: [applications]
+      summary: Apply for a job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateApplicationRequest"
+      responses:
+        "201":
+          description: Application created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /applications/{id}/status:
+    patch:
+      operationId: updateApplicationStatus
+      tags: [applications]
+      summary: Update application status (simulate ATS progression)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusRequest"
+      responses:
+        "200":
+          description: Updated application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Application"
+
+  /jobs/{id}/applicant-count:
+    get:
+      operationId: getJobApplicantCount
+      tags: [applications]
+      summary: Get total applicant count for a job
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Applicant count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApplicantCount"
+
+  /messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: List all messages for the session user
+      responses:
+        "200":
+          description: Messages list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message to HR (simulates email)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "201":
+          description: Message sent with automated HR reply queued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /exams:
+    get:
+      operationId: listExams
+      tags: [exams]
+      summary: List all PG-CET exam resources
+      responses:
+        "200":
+          description: List of exams
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Exam"
+
+  /exams/{id}:
+    get:
+      operationId: getExam
+      tags: [exams]
+      summary: Get a single exam resource by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Exam details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Exam"
+
+  /study-materials:
+    get:
+      operationId: listStudyMaterials
+      tags: [exams]
+      summary: List all study materials for PG-CET
+      responses:
+        "200":
+          description: Study materials
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StudyMaterial"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        company:
+          type: string
+        category:
+          type: string
+          enum: [IT, NON_IT, STATE_GOVT, CENTRAL_GOVT]
+        location:
+          type: string
+        shift:
+          type: string
+          enum: [Day, Night, Full_time, Part_time]
+        description:
+          type: string
+        eligibility:
+          type: string
+        applicationGuide:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        hrEmail:
+          type: string
+        salary:
+          type: string
+        openings:
+          type: integer
+        applicationLink:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - company
+        - category
+        - location
+        - shift
+        - description
+        - eligibility
+        - applicationGuide
+        - startDate
+        - endDate
+        - hrEmail
+        - salary
+        - openings
+        - applicationLink
+        - createdAt
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        applicantName:
+          type: string
+        applicantEmail:
+          type: string
+        status:
+          type: string
+          enum: [Pending, Reviewed, Interview, Offered, Rejected]
+        appliedAt:
+          type: string
+        job:
+          $ref: "#/components/schemas/Job"
+      required:
+        - id
+        - jobId
+        - applicantName
+        - applicantEmail
+        - status
+        - appliedAt
+
+    CreateApplicationRequest:
+      type: object
+      properties:
+        jobId:
+          type: integer
+        applicantName:
+          type: string
+        applicantEmail:
+          type: string
+        coverLetter:
+          type: string
+      required:
+        - jobId
+        - applicantName
+        - applicantEmail
+
+    UpdateStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [Pending, Reviewed, Interview, Offered, Rejected]
+      required:
+        - status
+
+    ApplicantCount:
+      type: object
+      properties:
+        jobId:
+          type: integer
+        total:
+          type: integer
+        byStatus:
+          type: object
+          properties:
+            Pending:
+              type: integer
+            Reviewed:
+              type: integer
+            Interview:
+              type: integer
+            Offered:
+              type: integer
+            Rejected:
+              type: integer
+      required:
+        - jobId
+        - total
+        - byStatus
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        senderName:
+          type: string
+        senderEmail:
+          type: string
+        hrEmail:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+        isReply:
+          type: boolean
+        sentAt:
+          type: string
+        job:
+          $ref: "#/components/schemas/Job"
+      required:
+        - id
+        - jobId
+        - senderName
+        - senderEmail
+        - hrEmail
+        - subject
+        - body
+        - isReply
+        - sentAt
+
+    SendMessageRequest:
+      type: object
+      properties:
+        jobId:
+          type: integer
+        senderName:
+          type: string
+        senderEmail:
+          type: string
+        subject:
+          type: string
+        body:
+          type: string
+      required:
+        - jobId
+        - senderName
+        - senderEmail
+        - subject
+        - body
+
+    Exam:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        fullName:
+          type: string
+        description:
+          type: string
+        examDate:
+          type: string
+        applicationStartDate:
+          type: string
+        applicationEndDate:
+          type: string
+        applyLink:
+          type: string
+        eligibility:
+          type: string
+        applicationGuide:
+          type: string
+        officialWebsite:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - fullName
+        - description
+        - examDate
+        - applicationStartDate
+        - applicationEndDate
+        - applyLink
+        - eligibility
+        - applicationGuide
+        - officialWebsite
+        - createdAt
+
+    StudyMaterial:
+      type: object
+      properties:
+        id:
+          type: integer
+        examId:
+          type: integer
+        title:
+          type: string
+        subject:
+          type: string
+        type:
+          type: string
+          enum: [PDF, Video, Notes, Practice_Test]
+        description:
+          type: string
+        url:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - examId
+        - title
+        - subject
+        - type
+        - description
+        - url
+        - createdAt
