@@ -33,6 +33,9 @@ export function Navbar() {
             <Link href="/dashboard" className="hover:text-primary transition-colors">User</Link>
             <Link href="/hr" className="hover:text-primary transition-colors">HR</Link>
             <Link href="/admin" className="hover:text-primary transition-colors">Admin</Link>
+            <Link href="/auth/login" className="hover:text-primary transition-colors">
+              Sign in
+            </Link>
           </div>
           
           <Button variant="ghost" size="icon" className="rounded-full">

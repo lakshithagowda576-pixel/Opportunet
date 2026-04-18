@@ -1,8 +1,23 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Navbar } from "@/components/Navbar"
-import { BarChart3, Briefcase, BookOpen, Users, Plus, Settings, ArrowUpRight } from "lucide-react"
+import {
+  BarChart3,
+  Briefcase,
+  BookOpen,
+  Users,
+  Plus,
+  Settings,
+  ArrowUpRight,
+  ShieldCheck,
+  Mail,
+  KeyRound,
+  Loader2,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
+import type { IntegrationHealth } from "@/lib/integration-status"
 
 const mockJobs = [
   { id: 1, title: "Frontend Developer", company: "Tech Corp", location: "Bangalore", salary: "8-12 LPA" },
@@ -13,10 +28,31 @@ const mockJobs = [
 const mockApplications = [
   { id: 1, jobId: 1, candidateName: "John Doe", status: "Pending", appliedAt: "2024-01-15" },
   { id: 2, jobId: 1, candidateName: "Jane Smith", status: "Pending", appliedAt: "2024-01-14" },
-  { id: 3, jobId: 2, candidateName: "Bob Johnson", status: "Pending", appliedAt: "2024-01-16" },
+  { id: 3, jobId: 2, candidateName: "Bob Johnson", status: "Reviwed", appliedAt: "2024-01-16" },
 ]
 
 export default function AdminDashboard() {
+  const [integrations, setIntegrations] = useState<IntegrationHealth | null>(null)
+  const [integrationsLoading, setIntegrationsLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const res = await fetch("/api/health/integrations", { cache: "no-store" })
+        const data = (await res.json()) as IntegrationHealth
+        if (!cancelled) setIntegrations(data)
+      } catch {
+        if (!cancelled) setIntegrations(null)
+      } finally {
+        if (!cancelled) setIntegrationsLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   const stats = [
     { label: "Total Applications", count: 42, icon: Briefcase, color: "text-blue-600", bg: "bg-blue-500/10" },
     { label: "Pending", count: 28, icon: Users, color: "text-amber-600", bg: "bg-amber-500/10" },
@@ -102,6 +138,66 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+
+        <section className="mt-12 rounded-3xl border bg-card p-8">
+          <h2 className="text-xl font-black tracking-tight">Integrations</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Status is derived from environment variables loaded for this app (including parent{" "}
+            <code className="rounded bg-muted px-1 py-0.5 text-xs">.env</code> in development).
+          </p>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="flex items-start gap-4 rounded-2xl border bg-background p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <KeyRound className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">OAuth (Supabase)</p>
+                {integrationsLoading ? (
+                  <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Checking…
+                  </p>
+                ) : integrations?.oauth ? (
+                  <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-emerald-600">
+                    <ShieldCheck className="h-4 w-4 shrink-0" /> Configured
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+                    Set <code className="text-xs">NEXT_PUBLIC_SUPABASE_URL</code> and{" "}
+                    <code className="text-xs">NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY</code>, then enable Google
+                    under Supabase → Authentication → Providers. Add redirect{" "}
+                    <code className="break-all text-xs">…/auth/callback</code>.
+                  </p>
+                )}
+                <Button asChild variant="outline" size="sm" className="mt-3 rounded-lg font-bold">
+                  <Link href="/auth/login">Open sign-in</Link>
+                </Button>
+              </div>
+            </div>
+            <div className="flex items-start gap-4 rounded-2xl border bg-background p-5">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <Mail className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">Email notifications</p>
+                {integrationsLoading ? (
+                  <p className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Checking…
+                  </p>
+                ) : integrations?.email ? (
+                  <p className="mt-2 flex items-center gap-2 text-sm font-semibold text-emerald-600">
+                    <ShieldCheck className="h-4 w-4 shrink-0" /> Configured ({integrations.emailProvider})
+                  </p>
+                ) : (
+                  <p className="mt-2 text-sm text-amber-700 dark:text-amber-400">
+                    Set <code className="text-xs">SMTP_HOST</code>, <code className="text-xs">SMTP_USER</code>,{" "}
+                    <code className="text-xs">SMTP_PASS</code> (and optional <code className="text-xs">SMTP_FROM</code>
+                    ), or set <code className="text-xs">RESEND_API_KEY</code> for Resend.
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   )
