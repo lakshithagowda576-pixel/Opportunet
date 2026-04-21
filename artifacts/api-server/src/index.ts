@@ -2,7 +2,7 @@ import app from "./app";
 export { logger } from "./lib/logger";
 import { logger } from "./lib/logger";
 import { db } from "@workspace/db";
-import { jobsTable, examsTable, studyMaterialsTable, usersTable } from "@workspace/db/schema";
+import { jobsTable, examsTable, studyMaterialsTable, usersTable, applicationsTable } from "@workspace/db/schema";
 import { count, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { IT_JOBS, NONIT_JOBS, STATE_GOVT_JOBS, CENTRAL_GOVT_JOBS, buildJobRows } from "./lib/seed-data";
@@ -24,7 +24,6 @@ function validateIntegrationConfig() {
   const oauthProviders = [
     { name: "Google", id: process.env.GOOGLE_CLIENT_ID, secret: process.env.GOOGLE_CLIENT_SECRET },
     { name: "GitHub", id: process.env.GITHUB_CLIENT_ID, secret: process.env.GITHUB_CLIENT_SECRET },
-    { name: "LinkedIn", id: process.env.LINKEDIN_CLIENT_ID, secret: process.env.LINKEDIN_CLIENT_SECRET },
   ];
   for (const provider of oauthProviders) {
     if (!provider.id || !provider.secret) {
@@ -61,8 +60,9 @@ async function autoSeed() {
   const [jobsCount] = await db.select({ count: count() }).from(jobsTable);
   const [examsCount] = await db.select({ count: count() }).from(examsTable);
 
+  // Auto-seed if empty
   if (jobsCount.count === 0) {
-    logger.info("Jobs table is empty — seeding jobs...");
+    logger.info("Jobs table is empty — seeding live jobs...");
     const allJobs = [
       ...buildJobRows(IT_JOBS, "IT"),
       ...buildJobRows(NONIT_JOBS, "NON_IT"),

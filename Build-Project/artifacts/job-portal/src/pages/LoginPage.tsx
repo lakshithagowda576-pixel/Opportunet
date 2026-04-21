@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
-import { Loader2, Mail, Lock, User, Eye, EyeOff, GraduationCap, Github, Chrome, Linkedin, Facebook } from "lucide-react";
+import { Loader2, Mail, Lock, User, Eye, EyeOff, GraduationCap, Github, Chrome, Linkedin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -39,7 +39,7 @@ export default function LoginPage() {
       name: "Google",
       icon: <Chrome className="w-4 h-4" />,
       color: "border-red-200 hover:bg-red-50 text-red-700",
-      href: "http://localhost:3008/api/auth/google",
+      href: `${BASE}/api/auth/google`,
     },
     {
       name: "GitHub",
@@ -61,16 +61,12 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-3">
-            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/10 p-2 overflow-hidden">
-              <img 
-                src={`${import.meta.env.BASE_URL}logo.png`} 
-                alt="OpportuNet Logo" 
-                className="w-full h-full object-contain"
-              />
+            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center shadow-lg shadow-primary/30">
+              <GraduationCap className="w-6 h-6 text-white" />
             </div>
-            <span className="text-2xl font-display font-bold text-foreground">OpportuNet</span>
+            <span className="text-2xl font-display font-bold text-foreground">GovPortal</span>
           </div>
-          <p className="text-muted-foreground text-sm">Connecting Talent with Opportunities Beyond Boundaries</p>
+          <p className="text-muted-foreground text-sm">Your gateway to government & corporate careers</p>
         </div>
 
         <div className="bg-card rounded-3xl shadow-2xl shadow-primary/10 border border-border overflow-hidden">

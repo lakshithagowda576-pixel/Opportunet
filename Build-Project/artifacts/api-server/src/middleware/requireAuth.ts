@@ -19,16 +19,3 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   }
   next();
 }
-
-export function requireAdminOrHR(req: Request, res: Response, next: NextFunction) {
-  if (!req.session?.userId) {
-    res.status(401).json({ error: "Unauthorized. Please log in." });
-    return;
-  }
-  const role = req.session?.userRole;
-  if (role !== "admin" && role !== "hr") {
-    res.status(403).json({ error: "Forbidden. Admin or HR access required." });
-    return;
-  }
-  next();
-}

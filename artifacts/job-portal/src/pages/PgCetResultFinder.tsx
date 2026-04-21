@@ -19,10 +19,19 @@ export default function PgCetResultFinder() {
 
   const [score, setScore] = useState<number | "">("");
   const [totalMarks] = useState(600);
-  const [examId] = useState(1); // PG-CET M.Tech
   const [submitted, setSubmitted] = useState(false);
   const [selectedCollege, setSelectedCollege] = useState<number | null>(null);
   const [selectedCourse, setSelectedCourse] = useState<string>("");
+
+  const { data: exams } = useQuery({
+    queryKey: ["exams"],
+    queryFn: async () => {
+      const response = await fetch(`${BASE}/api/exams`, { credentials: "include" });
+      return response.json();
+    }
+  });
+
+  const examId = (exams as any[])?.find(e => e.name.includes("M.Tech"))?.id || 1;
 
   const courses = [
     "MTech Computer Science",
@@ -68,10 +77,9 @@ export default function PgCetResultFinder() {
     queryKey: ["matching-colleges", score, selectedCourse],
     queryFn: async () => {
       if (!score || score <= 0) return [];
-      const url = new URL(`${window.location.origin}${BASE}/api/colleges/matching-score/${score}`);
-      if (selectedCourse) url.searchParams.append("course", selectedCourse);
+      const url = `${BASE}/api/colleges/matching-score/${score}${selectedCourse ? `?course=${encodeURIComponent(selectedCourse)}` : ""}`;
       
-      const response = await fetch(url.toString(), {
+      const response = await fetch(url, {
         credentials: "include",
       });
       if (!response.ok) throw new Error("Failed to fetch colleges");
@@ -164,10 +172,10 @@ export default function PgCetResultFinder() {
                         return;
                       }
                       setScore(val);
+                      setSubmitted(false); // Reset to allow re-submission
                     }}
                     className="flex-1 px-4 py-3 rounded-xl border-2 border-border focus:border-primary outline-none text-lg font-bold bg-background"
                     placeholder="e.g., 450"
-                    disabled={submitted}
                   />
                   <div className="text-xs text-muted-foreground self-center whitespace-nowrap">/ {totalMarks}</div>
                 </div>

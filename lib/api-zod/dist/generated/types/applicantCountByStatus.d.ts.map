@@ -1,0 +1,1 @@
+{"version":3,"file":"applicantCountByStatus.d.ts","sourceRoot":"","sources":["../../../src/generated/types/applicantCountByStatus.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,MAAM,MAAM,sBAAsB,GAAG;IACnC,OAAO,CAAC,EAAE,MAAM,CAAC;IACjB,QAAQ,CAAC,EAAE,MAAM,CAAC;IAClB,SAAS,CAAC,EAAE,MAAM,CAAC;IACnB,OAAO,CAAC,EAAE,MAAM,CAAC;IACjB,QAAQ,CAAC,EAAE,MAAM,CAAC;CACnB,CAAC"}

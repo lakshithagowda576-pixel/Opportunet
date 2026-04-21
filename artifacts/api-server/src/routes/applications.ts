@@ -10,6 +10,7 @@ import {
 } from "@workspace/api-zod";
 import { buildDefaultHrEmail, normalizeJobRecord } from "../lib/normalize-job";
 import { requireAuth } from "../middleware/requireAuth";
+import { sendApplicationConfirmationEmail } from "../lib/email-service";
 
 const router: IRouter = Router();
 router.use("/applications", requireAuth);
@@ -106,6 +107,8 @@ router.post("/applications", async (req, res) => {
     .returning();
 
   res.status(201).json({ ...app, appliedAt: app.appliedAt.toISOString() });
+
+  sendApplicationConfirmationEmail(app.id);
 });
 
 router.patch("/applications/:id/status", async (req, res) => {
@@ -179,6 +182,9 @@ router.post("/applications/track", async (req, res) => {
     .returning();
 
   const normalizedJob = normalizeJobRecord(job);
+
+  // If user is tracked, their applications will show up in "My Applications" due to email matching.
+  sendApplicationConfirmationEmail(app.id);
 
   res.json({
     trackingId: app.id,

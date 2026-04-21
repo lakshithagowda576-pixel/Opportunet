@@ -1,6 +1,6 @@
 import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { z } from "zod/v4";
 import { jobsTable } from "./jobs";
 
 export const messagesTable = pgTable("messages", {
@@ -22,5 +22,5 @@ export const insertMessageSchema = createInsertSchema(messagesTable).omit({
   sentAt: true,
   isReply: true,
 });
-export type InsertMessage = typeof messagesTable.$inferInsert;
+export type InsertMessage = z.infer<typeof insertMessageSchema>;
 export type Message = typeof messagesTable.$inferSelect;

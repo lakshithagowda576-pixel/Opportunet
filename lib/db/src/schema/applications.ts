@@ -29,6 +29,7 @@ export const applicationsTable = pgTable("applications", {
   coverLetter: text("cover_letter"),
   status: applicationStatusEnum("status").notNull().default("Pending"),
   appliedAt: timestamp("applied_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertApplicationSchema = createInsertSchema(applicationsTable).omit({

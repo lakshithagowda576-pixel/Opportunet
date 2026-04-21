@@ -1,75 +1,18 @@
 import { useState } from "react";
-import { useListMessages, useSendMessage } from "@workspace/api-client-react";
+import { useListMessages } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { Mail, Briefcase, Reply, User, Search, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/context/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
-
-const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function Messages() {
   const { data: messages, isLoading } = useListMessages();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [replyBody, setReplyBody] = useState("");
-
-  const { mutate: sendMessage, isPending: isSending } = useSendMessage({
-    mutation: {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["listMessages"] });
-        setReplyBody("");
-        toast({ title: "Message sent", description: "Your message was sent to HR." });
-      },
-      onError: () => {
-        toast({ title: "Failed", description: "Could not send message.", variant: "destructive" });
-      },
-    },
-  });
 
   if (isLoading) {
     return <div className="flex justify-center py-32"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
   }
 
-  const selectedMessage = messages?.find((m) => m.id === selectedId) || messages?.[0];
-  const canReplyAsHr = user?.role === "admin" || user?.role === "hr";
-
-  const handleReply = async () => {
-    if (!selectedMessage || !replyBody.trim()) return;
-
-    if (canReplyAsHr) {
-      const res = await fetch(`${BASE}/api/messages/${selectedMessage.id}/reply`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: replyBody }),
-      });
-      if (!res.ok) {
-        toast({ title: "Failed", description: "Could not send HR reply.", variant: "destructive" });
-        return;
-      }
-      queryClient.invalidateQueries({ queryKey: ["listMessages"] });
-      setReplyBody("");
-      toast({ title: "Reply sent", description: "Applicant has received your reply." });
-      return;
-    }
-
-    const jobId = selectedMessage.jobId;
-    sendMessage({
-      data: {
-        jobId,
-        senderName: user?.name || "Applicant",
-        senderEmail: user?.email || selectedMessage.senderEmail,
-        subject: selectedMessage.subject.startsWith("Re:")
-          ? selectedMessage.subject
-          : `Re: ${selectedMessage.subject}`,
-        body: replyBody,
-      },
-    });
-  };
+  const selectedMessage = messages?.find(m => m.id === selectedId) || messages?.[0];
 
   return (
     <div className="max-w-6xl mx-auto h-[calc(100vh-120px)] flex flex-col md:flex-row gap-6 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
@@ -174,17 +117,11 @@ export default function Messages() {
             <div className="p-4 border-t border-border bg-secondary/30">
               <div className="relative">
                 <textarea 
-                  value={replyBody}
-                  onChange={(e) => setReplyBody(e.target.value)}
-                  placeholder={canReplyAsHr ? "Reply to applicant..." : "Write a follow-up message to HR..."} 
+                  placeholder="Reply to this thread..." 
                   className="w-full pl-4 pr-12 py-3 rounded-xl bg-background border border-border focus:ring-2 focus:ring-primary/20 outline-none min-h-[80px] resize-none"
                 />
-                <button
-                  onClick={handleReply}
-                  disabled={!replyBody.trim() || isSending}
-                  className="absolute bottom-4 right-4 p-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50"
-                >
-                  {isSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Reply className="w-4 h-4" />}
+                <button className="absolute bottom-4 right-4 p-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors shadow-sm">
+                  <Reply className="w-4 h-4" />
                 </button>
               </div>
             </div>

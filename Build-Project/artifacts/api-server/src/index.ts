@@ -1,45 +1,15 @@
 import app from "./app";
-export { logger } from "./lib/logger";
 import { logger } from "./lib/logger";
 import { db } from "@workspace/db";
 import { jobsTable, examsTable, studyMaterialsTable, usersTable } from "@workspace/db/schema";
 import { count, eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import { IT_JOBS, NONIT_JOBS, STATE_GOVT_JOBS, CENTRAL_GOVT_JOBS, buildJobRows } from "./lib/seed-data";
-import { seedColleges } from "./lib/seed-colleges";
 
-const port = Number(process.env["PORT"]) || 3001;
-
-function validateIntegrationConfig() {
-  const oauthCallbackBase = process.env.OAUTH_CALLBACK_BASE_URL;
-  const frontendUrl = process.env.FRONTEND_URL;
-
-  if (!frontendUrl) {
-    logger.warn("FRONTEND_URL is not set. Social login redirects may fail.");
-  }
-  if (!oauthCallbackBase) {
-    logger.warn("OAUTH_CALLBACK_BASE_URL is not set. Falling back to request host for OAuth callbacks.");
-  }
-
-  const oauthProviders = [
-    { name: "Google", id: process.env.GOOGLE_CLIENT_ID, secret: process.env.GOOGLE_CLIENT_SECRET },
-    { name: "GitHub", id: process.env.GITHUB_CLIENT_ID, secret: process.env.GITHUB_CLIENT_SECRET },
-    { name: "LinkedIn", id: process.env.LINKEDIN_CLIENT_ID, secret: process.env.LINKEDIN_CLIENT_SECRET },
-  ];
-  for (const provider of oauthProviders) {
-    if (!provider.id || !provider.secret) {
-      logger.warn({ provider: provider.name }, "OAuth provider not fully configured");
-    }
-  }
-
-  if (!process.env.API_KEY) {
-    logger.warn("API_KEY is not set. Third-party API integrations may not work.");
-  }
-
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    logger.warn("SMTP credentials are incomplete. Email sending will run in simulation mode.");
-  }
-}
+const rawPort = process.env["PORT"];
+if (!rawPort) throw new Error("PORT environment variable is required but was not provided.");
+const port = Number(rawPort);
+if (Number.isNaN(port) || port <= 0) throw new Error(`Invalid PORT value: "${rawPort}"`);
 
 async function ensureAdminUser() {
   const adminEmail = "admin@govportal.com";
@@ -58,30 +28,35 @@ async function ensureAdminUser() {
 }
 
 async function autoSeed() {
-  const [jobsCount] = await db.select({ count: count() }).from(jobsTable);
-  const [examsCount] = await db.select({ count: count() }).from(examsTable);
-
-  if (jobsCount.count === 0) {
-    logger.info("Jobs table is empty — seeding jobs...");
-    const allJobs = [
-      ...buildJobRows(IT_JOBS, "IT"),
-      ...buildJobRows(NONIT_JOBS, "NON_IT"),
-      ...buildJobRows(STATE_GOVT_JOBS, "STATE_GOVT"),
-      ...buildJobRows(CENTRAL_GOVT_JOBS, "CENTRAL_GOVT"),
-    ];
-
-    const batchSize = 50;
-    for (let i = 0; i < allJobs.length; i += batchSize) {
-      const batch = allJobs.slice(i, i + batchSize);
-      await db.insert(jobsTable).values(batch);
-    }
-    logger.info({ inserted: allJobs.length }, "Jobs seeded");
+  const [result] = await db.select({ count: count() }).from(jobsTable);
+  if (result && result.count > 0) {
+    logger.info({ jobCount: result.count }, "Database already has jobs, skipping seed");
+    return;
   }
 
-  if (examsCount.count === 0) {
-    logger.info("Exams table is empty — seeding exams and materials...");
-    const exams = await db.insert(examsTable).values([
-      // ... (rest of the exams insertion from the original file)
+  logger.info("Database is empty — running auto-seed with 320+ jobs...");
+
+  await db.delete(studyMaterialsTable);
+  await db.delete(examsTable);
+  await db.delete(jobsTable);
+
+  const allJobs = [
+    ...buildJobRows(IT_JOBS, "IT"),
+    ...buildJobRows(NONIT_JOBS, "NON_IT"),
+    ...buildJobRows(STATE_GOVT_JOBS, "STATE_GOVT"),
+    ...buildJobRows(CENTRAL_GOVT_JOBS, "CENTRAL_GOVT"),
+  ];
+
+  const batchSize = 50;
+  let inserted = 0;
+  for (let i = 0; i < allJobs.length; i += batchSize) {
+    const batch = allJobs.slice(i, i + batchSize);
+    await db.insert(jobsTable).values(batch);
+    inserted += batch.length;
+  }
+  logger.info({ inserted }, "Jobs seeded");
+
+  const exams = await db.insert(examsTable).values([
     {
       name: "PG-CET M.Tech",
       fullName: "Post Graduate Common Entrance Test – M.Tech 2026 (Karnataka)",
@@ -89,9 +64,9 @@ async function autoSeed() {
       examDate: "2026-06-15",
       applicationStartDate: "2026-04-01",
       applicationEndDate: "2026-05-10",
-      applyLink: "https://kea.kar.nic.in/pgcet2026",
+      applyLink: "https://kea.kar.nic.in",
       eligibility: "Recognized B.E/B.Tech in relevant engineering branch with min 50% aggregate (45% SC/ST). Karnataka domicile or 7 years study in Karnataka. Final year students may apply provisionally.",
-      applicationGuide: "Step 1: Visit the official KEA portal and navigate to the 'Admission' tab then select 'PGCET 2026'\nStep 2: Download and read the M.Tech Information Bulletin carefully\nStep 3: Click on the 'Online Application' link specifically for M.Tech/M.E/M.Arch\nStep 4: Register using your Aadhaar number and mobile for OTP verification\nStep 5: Fill in your academic details and select your PGCET subject code\nStep 6: Upload your photograph, signature, and left-hand thumb impression\nStep 7: Pay the application fee online (₹650 for General/OBC)\nStep 8: Take a printout of the final submitted application for counseling",
+      applicationGuide: "Step 1: Visit kea.kar.nic.in and download M.Tech PG-CET 2026 notification\nStep 2: Register on KEA portal with valid email and mobile number\nStep 3: Fill application form with personal, educational, and specialization details\nStep 4: Upload photo (max 50KB), signature (max 30KB) in JPEG format\nStep 5: Select preferred exam center in Karnataka\nStep 6: Pay fee: ₹650 (General/OBC), ₹500 (SC/ST/Category-1)\nStep 7: Submit and download PDF acknowledgment\nStep 8: Download Hall Ticket 10 days before exam\nStep 9: Appear for CBT — 100 questions, 90 minutes\nStep 10: Check results and register for online counseling",
       officialWebsite: "https://kea.kar.nic.in",
     },
     {
@@ -101,9 +76,9 @@ async function autoSeed() {
       examDate: "2026-06-20",
       applicationStartDate: "2026-04-05",
       applicationEndDate: "2026-05-15",
-      applyLink: "https://kea.kar.nic.in/pgcet2026",
+      applyLink: "https://kea.kar.nic.in",
       eligibility: "Any Bachelor's degree with min 50% marks (45% for SC/ST/OBC-I/Cat-1). Final year students eligible provisionally. No age bar for private colleges.",
-      applicationGuide: "Step 1: On the KEA homepage, look for 'Flash News' or 'Latest Announcements' for PGCET 2026\nStep 2: Select the 'MBA Online Application' link to enter the dedicated portal\nStep 3: Create a login ID using your email and choose a strong password\nStep 4: Enter your personal details exactly as per your 10th marksheet\nStep 5: Select your preferred exam cities (you can choose up to 3)\nStep 6: Upload certificates for reservation (if applicable)\nStep 7: Complete the payment process via Net Banking or UPI\nStep 8: Preserve the 'S-Number' generated after successful submission",
+      applicationGuide: "Step 1: Visit kea.kar.nic.in and check MBA PG-CET 2026 notification\nStep 2: Create KEA account with your email ID\nStep 3: Select 'PGCET MBA 2026' and complete all application sections\nStep 4: Upload 10th, 12th, and degree certificates\nStep 5: Pay fee: ₹650 (General), ₹500 (SC/ST)\nStep 6: Note your Application Reference Number\nStep 7: Download Hall Ticket 1 week before exam\nStep 8: Appear for MBA PGCET — 100 questions, 90 minutes (no negative marking)\nStep 9: Register for KEA centralized counseling after results",
       officialWebsite: "https://kea.kar.nic.in",
     },
     {
@@ -113,9 +88,9 @@ async function autoSeed() {
       examDate: "2026-06-18",
       applicationStartDate: "2026-04-05",
       applicationEndDate: "2026-05-15",
-      applyLink: "https://kea.kar.nic.in/pgcet2026",
+      applyLink: "https://kea.kar.nic.in",
       eligibility: "BCA/B.Sc Computer Science/any degree with Mathematics. Min 50% aggregate (45% SC/ST). Mathematics at 10+2 or degree level required.",
-      applicationGuide: "Step 1: Access the KEA portal and find the 'PGCET MCA 2026' link in the sidebar\nStep 2: Register as a new user and verify your mobile number\nStep 3: Fill in the qualifying examination details (BCA/BSc)\nStep 4: Upload your recent passport size photo and signature\nStep 5: Pay the prescribed fee (₹650 for Gen/OBC, ₹500 for SC/ST)\nStep 6: Cross-verify all details before clicking 'Final Submit'\nStep 7: Download the PDF of the filled-in application form\nStep 8: Follow KEA announcements for Hall Ticket download dates",
+      applicationGuide: "Step 1: Visit kea.kar.nic.in and download MCA PG-CET 2026 brochure\nStep 2: Register on KEA portal with email and phone\nStep 3: Select 'PGCET MCA 2026' and fill application form\nStep 4: Upload photo, signature, degree certificates, Mathematics certificate\nStep 5: Pay ₹650 (General) or ₹500 (SC/ST) via net banking/UPI\nStep 6: Download acknowledgment\nStep 7: Appear for CBT exam after downloading Hall Ticket\nStep 8: Participate in online counseling after results",
       officialWebsite: "https://kea.kar.nic.in",
     },
   ]).returning();
@@ -128,36 +103,24 @@ async function autoSeed() {
     { examId: exams[0].id, title: "Signals & Systems – NPTEL ECE (IIT Faculty)", subject: "Electronics Engineering", type: "Video", description: "Fourier Analysis, Z-Transform, Laplace Transform, Sampling, and Filter Design for ECE PG-CET by IIT faculty.", url: "https://nptel.ac.in/courses/108103174" },
     { examId: exams[0].id, title: "Structural Analysis – NPTEL Civil Engineering", subject: "Civil Engineering", type: "Video", description: "Trusses, beams, frames, RCC Design, Soil Mechanics, and Fluid Mechanics for Civil Engineering PG-CET.", url: "https://nptel.ac.in/courses/105104122" },
     { examId: exams[0].id, title: "Thermodynamics – NPTEL Mechanical Engineering", subject: "Mechanical Engineering", type: "Video", description: "Thermodynamics, Heat Transfer, Fluid Mechanics, Theory of Machines for Mechanical PG-CET by IIT professors.", url: "https://nptel.ac.in/courses/112104113" },
-    { examId: exams[0].id, title: "Engineering Aptitude Practice – Adda247", subject: "Aptitude", type: "Practice_Test", description: "Topic-wise engineering aptitude practice questions and timed quizzes aligned with PG-CET style problem-solving.", url: "https://www.adda247.com/engineering-jobs/" },
-    { examId: exams[0].id, title: "GATE/PG-CET Formula Handbook – CSE", subject: "Computer Science", type: "Notes", description: "Quick revision formulas and short notes for algorithms, OS, DBMS, CN, and compiler design.", url: "https://www.geeksforgeeks.org/gate-cs-notes-gq/" },
     { examId: exams[1].id, title: "MBA PGCET Quantitative Aptitude – IndiaBIX", subject: "Quantitative Aptitude", type: "Practice_Test", description: "500+ QA problems on Arithmetic, Algebra, DI, and Time/Speed for MBA PGCET prep.", url: "https://www.indiabix.com/aptitude/questions-and-answers/" },
     { examId: exams[1].id, title: "Verbal Ability – MBA PGCET YouTube Course", subject: "Verbal Ability", type: "Video", description: "English grammar, RC strategies, verbal reasoning, and para-jumbles for MBA PGCET on YouTube.", url: "https://www.youtube.com/results?search_query=MBA+PGCET+verbal+ability+preparation" },
     { examId: exams[1].id, title: "Current Affairs 2025-26 – GK Today", subject: "General Awareness", type: "Notes", description: "Monthly current affairs, static GK, Economy, Science & Technology for MBA PGCET GK section.", url: "https://www.gktoday.in/current-affairs/" },
     { examId: exams[1].id, title: "MBA PGCET Mock Tests – Embibe", subject: "All Subjects", type: "Practice_Test", description: "Full MBA PGCET mock tests with previous year papers, time management, and section-wise analytics.", url: "https://www.embibe.com/exams/karnataka-pgcet-mba/" },
     { examId: exams[1].id, title: "Logical Reasoning – IndiaBIX Practice", subject: "Logical Reasoning", type: "Practice_Test", description: "Blood Relations, Syllogisms, Seating Arrangements, Puzzles for MBA PGCET Logical Reasoning section.", url: "https://www.indiabix.com/logical-reasoning/questions-and-answers/" },
-    { examId: exams[1].id, title: "MBA PGCET Previous Papers – EntranceZone", subject: "All Subjects", type: "PDF", description: "Previous years MBA PGCET papers and exam pattern references useful for final revision.", url: "https://www.entrancezone.com/exam/karnataka-pgcet" },
-    { examId: exams[1].id, title: "Data Interpretation Sets – Oliveboard", subject: "Quantitative Aptitude", type: "Practice_Test", description: "High-yield DI sets with detailed solutions to improve speed and accuracy for MBA PG-CET quant section.", url: "https://www.oliveboard.in/blog/data-interpretation-questions/" },
     { examId: exams[2].id, title: "MCA PG-CET Mathematics – NPTEL Discrete Maths", subject: "Mathematics", type: "Video", description: "Algebra, Calculus, Probability & Statistics, Set Theory, Mathematical Logic for MCA PG-CET.", url: "https://nptel.ac.in/courses/106106094" },
     { examId: exams[2].id, title: "C Programming & Data Structures – NPTEL", subject: "Computer Science", type: "Video", description: "C Programming, Data Structures, DBMS, OS, Computer Networks for MCA PG-CET by IIT faculty.", url: "https://nptel.ac.in/courses/106105085" },
     { examId: exams[2].id, title: "MCA PG-CET Mock Tests – Testbook", subject: "All Subjects", type: "Practice_Test", description: "Full MCA PGCET practice tests: Mathematics + CS + Analytical Ability. Tracks performance and weak areas.", url: "https://testbook.com/karnataka-pgcet-mca" },
     { examId: exams[2].id, title: "DBMS Concepts – GeeksforGeeks", subject: "Computer Science", type: "Notes", description: "ER diagrams, Normalization, SQL, Transactions, Indexing for MCA PG-CET Computer Science section.", url: "https://www.geeksforgeeks.org/dbms/" },
-    { examId: exams[2].id, title: "Operating Systems Notes – GeeksforGeeks", subject: "Computer Science", type: "Notes", description: "Processes, threads, synchronization, memory management, scheduling, and deadlocks for MCA entrance preparation.", url: "https://www.geeksforgeeks.org/operating-systems/" },
-    { examId: exams[2].id, title: "Computer Networks Notes – GeeksforGeeks", subject: "Computer Science", type: "Notes", description: "OSI model, TCP/IP, routing, transport layer, and application protocols for MCA PG-CET revision.", url: "https://www.geeksforgeeks.org/computer-network-tutorials/" },
-    { examId: exams[2].id, title: "MCA Entrance Mock Quiz – SelfStudys", subject: "All Subjects", type: "Practice_Test", description: "Section-wise MCA entrance mock quizzes covering mathematics, reasoning, and computer science fundamentals.", url: "https://www.selfstudys.com/mcatest" },
   ]);
-    logger.info("Auto-seed completed: 3exams, 24 study materials");
-  }
+
+  logger.info("Auto-seed completed: 320+ jobs, 3 exams, 16 study materials");
 }
 
-import { setupCronJobs } from "./tasks";
-
 async function main() {
-  validateIntegrationConfig();
   try {
     await autoSeed();
-    await seedColleges();
     await ensureAdminUser();
-    setupCronJobs();
   } catch (err) {
     logger.error({ err }, "Startup tasks failed, continuing anyway");
   }

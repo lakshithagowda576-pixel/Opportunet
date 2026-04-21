@@ -47,9 +47,7 @@ export interface Job {
   salary: string;
   openings: number;
   applicationLink: string;
-  official_url: string;
   createdAt: string;
-  updatedAt: string;
 }
 
 export type ApplicationStatus =
@@ -61,7 +59,6 @@ export const ApplicationStatus = {
   Interview: "Interview",
   Offered: "Offered",
   Rejected: "Rejected",
-  REDIRECTED: "REDIRECTED",
 } as const;
 
 export interface Application {
@@ -78,12 +75,6 @@ export interface CreateApplicationRequest {
   jobId: number;
   applicantName: string;
   applicantEmail: string;
-  applicantPhone?: string;
-  applicantAddress?: string;
-  education?: string;
-  qualification?: string;
-  resumeUrl?: string;
-  acceptedTerms?: boolean;
   coverLetter?: string;
 }
 
@@ -96,7 +87,6 @@ export const UpdateStatusRequestStatus = {
   Interview: "Interview",
   Offered: "Offered",
   Rejected: "Rejected",
-  REDIRECTED: "REDIRECTED",
 } as const;
 
 export interface UpdateStatusRequest {
@@ -109,7 +99,6 @@ export type ApplicantCountByStatus = {
   Interview?: number;
   Offered?: number;
   Rejected?: number;
-  REDIRECTED?: number;
 };
 
 export interface ApplicantCount {

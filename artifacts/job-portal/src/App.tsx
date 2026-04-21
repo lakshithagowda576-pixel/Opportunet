@@ -49,11 +49,16 @@ function Router() {
 }
 
 function App() {
+  console.log("App initializing...", {
+    BASE_URL: import.meta.env.BASE_URL,
+    SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    SUPABASE_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY ? "EXISTS" : "MISSING"
+  });
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+          <WouterRouter base={import.meta.env.BASE_URL?.replace(/\/$/, "") || ""}>
             <Router />
           </WouterRouter>
           <Toaster />

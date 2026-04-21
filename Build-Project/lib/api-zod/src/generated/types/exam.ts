@@ -18,6 +18,5 @@ export interface Exam {
   eligibility: string;
   applicationGuide: string;
   officialWebsite: string;
-  official_url?: string;
   createdAt: string;
 }

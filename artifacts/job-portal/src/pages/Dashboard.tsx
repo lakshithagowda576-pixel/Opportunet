@@ -1,18 +1,21 @@
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  useListJobs, 
+import {
+  useListJobs,
   useListApplications
 } from "@workspace/api-client-react";
-import { 
-  Briefcase, 
-  FileText, 
-  TrendingUp, 
+import {
+  Briefcase,
+  FileText,
+  TrendingUp,
   ArrowRight,
   Loader2,
   Building2,
-  GraduationCap
+  GraduationCap,
+  LayoutDashboard,
+  Sparkles,
+  ExternalLink
 } from "lucide-react";
 import { JobCard } from "@/components/JobCard";
 import { cn } from "@/lib/utils";
@@ -52,34 +55,34 @@ export default function Dashboard() {
   const centralGovtJobs = jobs?.filter(j => j.category === "CENTRAL_GOVT").slice(0, 3) || [];
 
   const stats = [
-    { 
-      label: "Active Roles", 
-      value: jobs?.length || 0, 
-      icon: Briefcase, 
+    {
+      label: "Active Roles",
+      value: jobs?.length || 0,
+      icon: Briefcase,
       trend: "Verified Today",
       color: "text-blue-600",
       bg: "bg-blue-50"
     },
-    { 
-      label: "Your Submissions", 
-      value: appSummary?.total ?? applications?.length ?? 0, 
-      icon: FileText, 
+    {
+      label: "Your Submissions",
+      value: appSummary?.total ?? applications?.length ?? 0,
+      icon: FileText,
       trend: `${appSummary?.byStatus?.Offered || 0} Successful`,
       color: "text-emerald-600",
       bg: "bg-emerald-50"
     },
-    { 
-      label: "In Review", 
-      value: (appSummary?.byStatus?.Pending || 0) + (appSummary?.byStatus?.Reviewed || 0), 
-      icon: TrendingUp, 
+    {
+      label: "In Review",
+      value: (appSummary?.byStatus?.Pending || 0) + (appSummary?.byStatus?.Reviewed || 0),
+      icon: TrendingUp,
       trend: "Tracking Live",
       color: "text-purple-600",
       bg: "bg-purple-50"
     },
-    { 
-      label: "Sectors Covered", 
-      value: "04", 
-      icon: LayoutDashboard, 
+    {
+      label: "Sectors Covered",
+      value: "04",
+      icon: LayoutDashboard,
       trend: "State & Central",
       color: "text-amber-600",
       bg: "bg-amber-50"
@@ -121,7 +124,7 @@ export default function Dashboard() {
   );
 
   return (
-    <motion.div 
+    <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -130,12 +133,12 @@ export default function Dashboard() {
       {/* Hero Section */}
       <motion.section 
         variants={itemVariants}
-        className="relative rounded-[3rem] overflow-hidden bg-slate-950 min-h-[450px] flex items-center group"
+        className="relative rounded-[3rem] overflow-hidden bg-[#060B19] min-h-[450px] flex items-center group border border-indigo-900/20 shadow-[0_0_100px_-20px_rgba(79,70,229,0.15)]"
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-slate-950 to-accent/20 z-10"></div>
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/30 via-[#060B19] to-violet-900/20 z-10"></div>
         <div className="absolute inset-0 overflow-hidden">
-           <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[120px] animate-pulse"></div>
-           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/20 rounded-full blur-[120px] animate-pulse delay-700"></div>
+           <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] animate-pulse"></div>
+           <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-violet-500/10 rounded-full blur-[120px] animate-pulse delay-1000"></div>
         </div>
         
         <div className="relative z-20 p-8 md:p-16 w-full flex flex-col md:flex-row items-center justify-between gap-12">
@@ -144,41 +147,55 @@ export default function Dashboard() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] text-white/70"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300"
             >
-              <Sparkles className="w-3.5 h-3.5 text-primary" /> India's Most Unified Portal
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" /> India's Most Unified Portal
             </motion.div>
-            <h1 className="text-5xl md:text-7xl font-display font-black tracking-tighter leading-none text-white">
+            <motion.h1 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, type: "spring", stiffness: 100 }}
+              className="text-5xl md:text-7xl font-display font-black tracking-tighter leading-[1.1] text-white">
               Bridge to Your <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-cyan-300 to-accent">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-fuchsia-400">
                 Professional Future.
               </span>
-            </h1>
-            <p className="text-white/60 text-lg max-w-xl font-medium leading-relaxed">
+            </motion.h1>
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, type: "spring", stiffness: 100 }}
+              className="text-indigo-100/60 text-lg max-w-xl font-medium leading-relaxed">
               OpportuNet simplifies your career journey across IT sectors, Corporate roles, and Government examinations with real-time tracking and guided applications.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <Link href="/jobs" className="px-8 py-4 rounded-2xl bg-primary text-white font-black shadow-2xl shadow-primary/40 hover:scale-105 hover:bg-primary/90 transition-all active:scale-95 flex items-center gap-2">
+            </motion.p>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6, type: "spring", stiffness: 100 }}
+              className="flex flex-wrap gap-4 justify-center md:justify-start">
+              <Link href="/jobs" className="px-8 py-4 rounded-2xl bg-indigo-600 text-white font-black shadow-2xl shadow-indigo-600/40 hover:scale-105 hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-2">
                 Browse Directory <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link href="/exams" className="px-8 py-4 rounded-2xl bg-white/10 text-white font-black backdrop-blur-xl border border-white/20 hover:bg-white/20 transition-all flex items-center gap-2">
-                PG-CET Hub <GraduationCap className="w-5 h-5" />
-              </Link>
-            </div>
+              <div className="flex flex-wrap gap-4">
+                <Link href="/exams" className="px-8 py-4 rounded-2xl bg-white/5 text-white font-black backdrop-blur-xl border border-white/10 hover:bg-white/10 transition-all flex items-center gap-2">
+                  PG-CET Hub <GraduationCap className="w-5 h-5" />
+                </Link>
+              </div>
+            </motion.div>
           </div>
-          
+
           <div className="hidden lg:block flex-1 relative">
              <div className="relative w-full aspect-square max-w-md mx-auto">
-                <div className="absolute inset-0 bg-gradient-to-tr from-primary to-accent rounded-[3rem] rotate-6 opacity-20 animate-pulse"></div>
-                <div className="absolute inset-0 bg-slate-900 border border-white/10 rounded-[3rem] p-8 shadow-2xl overflow-hidden group-hover:rotate-0 transition-transform duration-700">
+                <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500 to-purple-500 rounded-[3rem] rotate-6 opacity-30 blur-lg animate-pulse"></div>
+                <div className="absolute inset-0 bg-[#090E1F]/90 backdrop-blur-2xl border border-indigo-500/20 rounded-[3rem] p-8 shadow-2xl overflow-hidden group-hover:rotate-0 transition-transform duration-700">
                     <div className="space-y-6">
                        {[1,2,3].map(i => (
-                         <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5">
-                            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                               <Briefcase className="w-5 h-5 text-primary" />
+                         <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-indigo-500/5 border border-indigo-500/10 hover:bg-indigo-500/10 transition-colors">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center shadow-inner">
+                               <Briefcase className="w-5 h-5 text-indigo-400" />
                             </div>
-                            <div className="flex-1 h-2 bg-white/10 rounded-full"></div>
-                            <div className="w-12 h-2 bg-primary/40 rounded-full"></div>
+                            <div className="flex-1 h-2 bg-indigo-500/20 rounded-full"></div>
+                            <div className="w-12 h-2 bg-purple-500/30 rounded-full"></div>
                          </div>
                        ))}
                     </div>
@@ -191,9 +208,9 @@ export default function Dashboard() {
       {/* Stats Grid */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
         {stats.map((stat, index) => (
-          <motion.div 
+          <motion.div
             variants={itemVariants}
-            key={stat.label} 
+            key={stat.label}
             className="group bg-card hover:bg-white rounded-[2.5rem] p-8 border border-border/50 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.1)] transition-all duration-500"
           >
             <div className={`w-14 h-14 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500 shadow-inner`}>
@@ -215,14 +232,14 @@ export default function Dashboard() {
 
       {/* Main Content Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-        
+
         {/* IT Sector */}
         <motion.section variants={itemVariants}>
-          <SectionHeader 
-            title="Technology & IT" 
-            link="/jobs?category=IT" 
-            icon={Briefcase} 
-            color="bg-blue-600 text-white shadow-blue-200" 
+          <SectionHeader
+            title="Technology & IT"
+            link="/jobs?category=IT"
+            icon={Briefcase}
+            color="bg-blue-600 text-white shadow-blue-200"
           />
           <div className="grid grid-cols-1 gap-6">
             {itJobs.map(job => <JobCard key={job.id} job={job} />)}
@@ -232,11 +249,11 @@ export default function Dashboard() {
 
         {/* Corporate */}
         <motion.section variants={itemVariants}>
-          <SectionHeader 
-            title="Corporate & Non-IT" 
-            link="/jobs?category=NON_IT" 
-            icon={Building2} 
-            color="bg-emerald-600 text-white shadow-emerald-200" 
+          <SectionHeader
+            title="Corporate & Non-IT"
+            link="/jobs?category=NON_IT"
+            icon={Building2}
+            color="bg-emerald-600 text-white shadow-emerald-200"
           />
           <div className="grid grid-cols-1 gap-6">
             {nonItJobs.map(job => <JobCard key={job.id} job={job} />)}
@@ -246,11 +263,11 @@ export default function Dashboard() {
 
         {/* State Govt */}
         <motion.section variants={itemVariants}>
-          <SectionHeader 
-            title="State Government" 
-            link="/jobs?category=STATE_GOVT" 
-            icon={FileText} 
-            color="bg-purple-600 text-white shadow-purple-200" 
+          <SectionHeader
+            title="State Government"
+            link="/jobs?category=STATE_GOVT"
+            icon={FileText}
+            color="bg-purple-600 text-white shadow-purple-200"
           />
           <div className="grid grid-cols-1 gap-6">
             {stateGovtJobs.map(job => <JobCard key={job.id} job={job} />)}
@@ -260,11 +277,11 @@ export default function Dashboard() {
 
         {/* Central Govt */}
         <motion.section variants={itemVariants}>
-          <SectionHeader 
-            title="Central Government" 
-            link="/jobs?category=CENTRAL_GOVT" 
-            icon={TrendingUp} 
-            color="bg-amber-600 text-white shadow-amber-200" 
+          <SectionHeader
+            title="Central Government"
+            link="/jobs?category=CENTRAL_GOVT"
+            icon={TrendingUp}
+            color="bg-amber-600 text-white shadow-amber-200"
           />
           <div className="grid grid-cols-1 gap-6">
             {centralGovtJobs.map(job => <JobCard key={job.id} job={job} />)}
@@ -275,7 +292,7 @@ export default function Dashboard() {
       </div>
 
       {/* PG-CET CTA */}
-      <motion.section 
+      <motion.section
         variants={itemVariants}
         className="relative bg-slate-900 rounded-[3rem] p-10 md:p-16 border border-white/10 flex flex-col md:flex-row items-center justify-between gap-12 overflow-hidden group"
       >

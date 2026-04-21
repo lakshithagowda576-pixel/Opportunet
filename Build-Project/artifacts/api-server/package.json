@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "pnpm run build && node --enable-source-maps --env-file=../../.env ./dist/index.mjs",
+    "dev": "export NODE_ENV=development && pnpm run build && pnpm run start",
     "build": "node ./build.mjs",
     "start": "node --enable-source-maps ./dist/index.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
@@ -12,7 +12,6 @@
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
     "@types/express-session": "^1.18.2",
-    "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^7.0.11",
     "@types/passport": "^1.0.17",
     "@types/passport-facebook": "^3.0.4",
@@ -25,11 +24,9 @@
     "connect-pg-simple": "^10.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2",
-    "dotenv": "^16.4.5",
     "drizzle-orm": "catalog:",
     "express": "^5",
     "express-session": "^1.19.0",
-    "node-cron": "^4.2.1",
     "nodemailer": "^8.0.4",
     "passport": "^0.7.0",
     "passport-facebook": "^3.0.0",
@@ -38,8 +35,7 @@
     "passport-linkedin-oauth2": "^2.0.0",
     "passport-local": "^1.0.0",
     "pino": "^9",
-    "pino-http": "^10",
-    "zod": "catalog:"
+    "pino-http": "^10"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",

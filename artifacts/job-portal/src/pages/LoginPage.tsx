@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/context/AuthContext";
-import { Loader2, Mail, Lock, User, Eye, EyeOff, GraduationCap, Github, Chrome, Linkedin, Facebook } from "lucide-react";
+import { Loader2, Mail, Lock, User, Eye, EyeOff, GraduationCap, Github, Chrome, Facebook } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
@@ -46,12 +46,6 @@ export default function LoginPage() {
       icon: <Github className="w-4 h-4" />,
       color: "border-gray-300 hover:bg-gray-50 text-gray-700",
       href: `${BASE}/api/auth/github`,
-    },
-    {
-      name: "LinkedIn",
-      icon: <Linkedin className="w-4 h-4" />,
-      color: "border-blue-200 hover:bg-blue-50 text-blue-700",
-      href: `${BASE}/api/auth/linkedin`,
     },
   ];
 

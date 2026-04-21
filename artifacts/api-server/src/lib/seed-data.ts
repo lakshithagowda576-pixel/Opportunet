@@ -1,13 +1,15 @@
 import { buildDefaultHrEmail } from "./normalize-job";
 
 export const IT_JOBS = [
-  { title: "Summer Internship (June-August)", company: "Google India", location: "Bangalore, Karnataka", salary: "₹50k–1L Month", openings: 100, applicationLink: "https://careers.google.com" },
-  { title: "April Fast Track Hiring", company: "Meta India", location: "Mumbai, Maharashtra", salary: "₹20–30 LPA", openings: 50, applicationLink: "https://facebook.com/careers" },
+  { title: "Summer Internship (June-August)", company: "Google India", location: "Bangalore, Karnataka", salary: "₹50k–1L Month", openings: 100, applicationLink: "https://www.google.com/about/careers/applications/jobs/results/", startDate: "2024-03-01", endDate: "2024-05-30" },
+  { title: "Software Engineer, University Graduate", company: "Google India", location: "Bangalore, Karnataka", salary: "₹18–25 LPA", openings: 20, applicationLink: "https://www.google.com/about/careers/applications/jobs/results/", startDate: "2024-01-01", endDate: "2024-03-01" }, // CLOSED
+  { title: "April Fast Track Hiring", company: "Meta India", location: "Mumbai, Maharashtra", salary: "₹20–30 LPA", openings: 50, applicationLink: "https://www.metacareers.com/jobs/", startDate: "2024-04-01", endDate: "2024-06-30" },
   // ─── TIER 1 IT COMPANIES ───
-  { title: "Senior Software Engineer", company: "TCS (Tata Consultancy Services)", location: "Mumbai, Maharashtra", salary: "₹15–22 LPA", openings: 50, applicationLink: "https://nextstep.tcs.com" },
-  { title: "Data Scientist", company: "TCS (Tata Consultancy Services)", location: "Hyderabad, Telangana", salary: "₹18–28 LPA", openings: 30, applicationLink: "https://nextstep.tcs.com" },
-  { title: "DevOps Engineer", company: "TCS (Tata Consultancy Services)", location: "Chennai, Tamil Nadu", salary: "₹12–20 LPA", openings: 20, applicationLink: "https://nextstep.tcs.com" },
-  { title: "Full Stack Developer", company: "Infosys Limited", company2: "", location: "Bangalore, Karnataka", salary: "₹12–18 LPA", openings: 40, applicationLink: "https://www.infosys.com/careers" },
+  { title: "Senior Software Engineer", company: "TCS (Tata Consultancy Services)", location: "Mumbai, Maharashtra", salary: "₹15–22 LPA", openings: 50, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Data Scientist", company: "TCS (Tata Consultancy Services)", location: "Hyderabad, Telangana", salary: "₹18–28 LPA", openings: 30, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Graduate Trainee 2024", company: "TCS (Tata Consultancy Services)", location: "Pan India", salary: "₹3.5–7 LPA", openings: 500, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-01-01", endDate: "2024-02-15" }, // CLOSED
+  { title: "DevOps Engineer", company: "TCS (Tata Consultancy Services)", location: "Chennai, Tamil Nadu", salary: "₹12–20 LPA", openings: 20, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Full Stack Developer", company: "Infosys Limited", location: "Bangalore, Karnataka", salary: "₹12–18 LPA", openings: 40, applicationLink: "https://www.infosys.com/careers/", startDate: "2024-03-10", endDate: "2024-05-10" },
   { title: "Cloud Solutions Architect", company: "Infosys Limited", location: "Pune, Maharashtra", salary: "₹22–35 LPA", openings: 10, applicationLink: "https://www.infosys.com/careers" },
   { title: "AI/ML Engineer", company: "Infosys Limited", location: "Hyderabad, Telangana", salary: "₹20–32 LPA", openings: 15, applicationLink: "https://www.infosys.com/careers" },
   { title: "Senior Software Engineer", company: "Wipro Technologies", location: "Bangalore, Karnataka", salary: "₹18–28 LPA", openings: 12, applicationLink: "https://careers.wipro.com" },
@@ -187,9 +189,9 @@ export const NONIT_JOBS = [
 ];
 
 export const STATE_GOVT_JOBS = [
-  { title: "Junior Engineer (Civil) – PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "₹27,300–52,650/month", openings: 250, applicationLink: "https://kpsc.kar.nic.in" },
-  { title: "Junior Engineer (Electrical) – PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "₹27,300–52,650/month", openings: 150, applicationLink: "https://kpsc.kar.nic.in" },
-  { title: "Junior Engineer (Mechanical)", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "₹27,300–52,650/month", openings: 80, applicationLink: "https://kpsc.kar.nic.in" },
+  { title: "Junior Engineer (Civil) – PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "₹27,300–52,650/month", openings: 250, applicationLink: "https://kpsc.kar.nic.in/notifications.html" },
+  { title: "Junior Engineer (Electrical) – PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "₹27,300–52,650/month", openings: 150, applicationLink: "https://kpsc.kar.nic.in/notifications.html" },
+  { title: "Junior Engineer (Mechanical)", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "₹27,300–52,650/month", openings: 80, applicationLink: "https://kpsc.kar.nic.in/notifications.html" },
   { title: "Assistant Engineer (Civil)", company: "Karnataka Water Resources Dept (KPSC)", location: "Bangalore, Karnataka", salary: "₹34,500–62,000/month", openings: 120, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "Police Sub Inspector (PSI) – Civil", company: "Karnataka State Police (KPSC)", location: "Pan Karnataka", salary: "₹35,100–62,600/month", openings: 545, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "Police Sub Inspector (PSI) – Armed", company: "Karnataka State Police (KPSC)", location: "Pan Karnataka", salary: "₹35,100–62,600/month", openings: 200, applicationLink: "https://kpsc.kar.nic.in" },
@@ -202,13 +204,14 @@ export const STATE_GOVT_JOBS = [
   { title: "ASHA Worker", company: "Karnataka NHM", location: "Rural Karnataka", salary: "₹4,000–8,000/month", openings: 5000, applicationLink: "https://nhm.kar.nic.in" },
   { title: "Medical Officer – Primary Health Center", company: "Karnataka Health Dept (KPSC)", location: "Rural Karnataka", salary: "₹56,100–1,32,000/month", openings: 300, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "Specialist Doctor (Gynaecology)", company: "Karnataka Health Dept (KPSC)", location: "District Hospitals", salary: "₹67,700–1,52,000/month", openings: 80, applicationLink: "https://kpsc.kar.nic.in" },
-  { title: "Assistant Professor – Computer Science", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 85, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor – Electronics & Communication", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 75, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor – Mechanical Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 65, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor – Civil Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 60, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor – Mathematics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "₹37,400–67,000/month", openings: 120, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor – Physics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "₹37,400–67,000/month", openings: 100, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor – Chemistry", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "₹37,400–67,000/month", openings: 90, applicationLink: "https://kea.kar.nic.in" },
+  { title: "Assistant Professor – Computer Science", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 85, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor – Electronics & Communication", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 75, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor – Mechanical Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 65, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor – Civil Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "₹37,400–67,000/month", openings: 60, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "FDA/SDA 2023 Recruitment", company: "Karnataka KPSC", location: "Pan Karnataka", salary: "₹21,400–42,000/month", openings: 400, applicationLink: "https://kpsc.kar.nic.in/", startDate: "2023-09-01", endDate: "2023-10-15" }, // CLOSED
+  { title: "Assistant Professor – Mathematics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "₹37,400–67,000/month", openings: 120, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor – Physics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "₹37,400–67,000/month", openings: 100, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor – Chemistry", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "₹37,400–67,000/month", openings: 90, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
   { title: "PGT Teacher (Computer Science)", company: "Karnataka Residential Schools (KREIS)", location: "Pan Karnataka", salary: "₹28,900–46,900/month", openings: 150, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "PGT Teacher (Kannada)", company: "Karnataka Residential Schools (KREIS)", location: "Pan Karnataka", salary: "₹28,900–46,900/month", openings: 200, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "TGT Teacher (English Medium)", company: "Samagra Shiksha Karnataka", location: "Pan Karnataka", salary: "₹22,400–42,500/month", openings: 500, applicationLink: "https://kpsc.kar.nic.in" },

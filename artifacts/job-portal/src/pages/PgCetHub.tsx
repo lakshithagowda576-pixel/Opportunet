@@ -92,7 +92,7 @@ export default function PgCetHub() {
 
   const itemVariants = {
     hidden: { opacity: 0, y: 30 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" as any } }
   };
 
   return (
@@ -119,7 +119,7 @@ export default function PgCetHub() {
             animate={{ opacity: 1, scale: 1 }}
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/5 border border-white/10 text-white/80 text-[10px] font-black uppercase tracking-[0.3em] backdrop-blur-2xl"
           >
-            <Sparkles className="w-4 h-4 text-primary" /> Future-Ready Preparation
+            Future-Ready Preparation
           </motion.div>
           <h1 className="text-5xl md:text-8xl font-display font-black text-white leading-[0.9] tracking-tighter">
             Conquer <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-cyan-300 to-accent">PG-CET 2026</span>
@@ -162,7 +162,6 @@ export default function PgCetHub() {
             >
               <div className="space-y-4">
                 <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                  <MonitorPlay className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <h3 className="font-black text-xl text-foreground group-hover:text-primary transition-colors">{link.label}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed font-medium">{link.description}</p>
@@ -192,7 +191,7 @@ export default function PgCetHub() {
             const steps = exam.applicationGuide?.split("\n").filter(s => s.trim()) ?? [];
             return (
               <motion.div 
-                whileHover={{ shadow: "0 30px 60px -12px rgba(0,0,0,0.12)" }}
+                whileHover={{ boxShadow: "0 30px 60px -12px rgba(0,0,0,0.12)" }}
                 key={exam.id} 
                 className="bg-card rounded-[4rem] border border-border/50 overflow-hidden group transition-all duration-500"
               >
@@ -207,14 +206,7 @@ export default function PgCetHub() {
                       <h3 className="text-4xl md:text-6xl font-display font-black tracking-tighter">{exam.fullName}</h3>
                       <p className="text-slate-400 max-w-3xl leading-relaxed text-lg font-medium">{exam.description}</p>
                     </div>
-                    <button 
-                      onClick={() => setRedirectExam(exam)}
-                      className="group/btn relative px-10 py-5 bg-primary text-white rounded-[2rem] font-black shadow-2xl shadow-primary/40 hover:scale-105 active:scale-95 transition-all flex items-center gap-3 overflow-hidden"
-                    >
-                      <span className="relative z-10">Secure Your Seat</span>
-                      <ArrowRight className="w-5 h-5 relative z-10 group-hover/btn:translate-x-2 transition-transform" />
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/btn:translate-x-full duration-1000 transition-transform"></div>
-                    </button>
+
                   </div>
                 </div>
 
@@ -586,7 +578,7 @@ export default function PgCetHub() {
                       <ListChecks className="w-5 h-5" /> Operational Checklist
                     </h4>
                     <div className="space-y-6">
-                      {redirectExam.applicationGuide?.split("\n").filter(s => s.trim()).map((step, i) => (
+                      {redirectExam.applicationGuide?.split("\n").filter((s: string) => s.trim()).map((step: string, i: number) => (
                         <div key={i} className="flex gap-6 group">
                           <div className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center text-[10px] font-black shrink-0 group-hover:scale-110 group-hover:rotate-12 transition-all">
                             {i + 1}

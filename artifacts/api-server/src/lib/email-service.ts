@@ -374,3 +374,75 @@ export async function sendDailyJobOpeningsEmail(userId: number) {
     console.error(`Failed to send job openings email to user ${userId}:`, error);
   }
 }
+
+export async function sendApplicationConfirmationEmail(applicationId: number) {
+  try {
+    const [application] = await db
+      .select({
+        id: applicationsTable.id,
+        applicantEmail: applicationsTable.applicantEmail,
+        applicantName: applicationsTable.applicantName,
+        jobTitle: jobsTable.title,
+        company: jobsTable.company,
+      })
+      .from(applicationsTable)
+      .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id))
+      .where(eq(applicationsTable.id, applicationId));
+
+    if (!application) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
+            .content { background: white; padding: 30px; margin-top: 20px; border-radius: 8px; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Application Submitted</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${application.applicantName},</p>
+              <p>We have successfully received your application for the following position:</p>
+              <h2 style="margin: 10px 0; color: #667eea;">${application.jobTitle}</h2>
+              <p style="color: #666; margin: 0;">at <strong>${application.company}</strong></p>
+              <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                <p style="margin: 0; color: #1e3a8a; font-size: 16px;">
+                  <strong>Your Application ID:</strong> ${application.id}
+                </p>
+              </div>
+              <p style="margin-top: 20px;">You can track your application status anytime from your <strong>My Applications</strong> dashboard.</p>
+              <p style="margin-top: 30px;">Best regards,<br/><strong>OpportuNet Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>© 2026 OpportuNet. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const transporter = createTransporter();
+    if (transporter) {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: application.applicantEmail,
+        subject: `Application Submitted Successfully - ${application.jobTitle}`,
+        html,
+      });
+      console.log(`Confirmation email sent to ${application.applicantEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Confirmation email would be sent to ${application.applicantEmail}`);
+    }
+  } catch (error) {
+    console.error(`Failed to send confirmation email for application ${applicationId}:`, error);
+  }
+}
+

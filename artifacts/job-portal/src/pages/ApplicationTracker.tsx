@@ -29,6 +29,19 @@ export default function ApplicationTracker() {
         const response = await fetch("/api/applications");
         const data = await response.json();
         setApplications(data || []);
+        
+        // Parse the application ID from URL if present
+        const searchParams = new URLSearchParams(window.location.search);
+        const focusId = searchParams.get('id');
+        
+        if (focusId) {
+          const focused = data.find((a: any) => a.id === parseInt(focusId));
+          if (focused) {
+            setSelectedApplication(focused);
+            return;
+          }
+        }
+        
         if (data?.length > 0) {
           setSelectedApplication(data[0]);
         }

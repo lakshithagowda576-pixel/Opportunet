@@ -38,9 +38,7 @@ export const ListJobsResponseItem = zod.object({
   salary: zod.string(),
   openings: zod.number(),
   applicationLink: zod.string(),
-  official_url: zod.string(),
   createdAt: zod.string(),
-  updatedAt: zod.string(),
 });
 export const ListJobsResponse = zod.array(ListJobsResponseItem);
 
@@ -67,7 +65,6 @@ export const GetJobResponse = zod.object({
   salary: zod.string(),
   openings: zod.number(),
   applicationLink: zod.string(),
-  official_url: zod.string(),
   createdAt: zod.string(),
 });
 
@@ -79,7 +76,7 @@ export const ListApplicationsResponseItem = zod.object({
   jobId: zod.number(),
   applicantName: zod.string(),
   applicantEmail: zod.string(),
-  status: zod.enum(["Pending", "Reviewed", "Interview", "Offered", "Rejected", "REDIRECTED"]),
+  status: zod.enum(["Pending", "Reviewed", "Interview", "Offered", "Rejected"]),
   appliedAt: zod.string(),
   job: zod
     .object({
@@ -98,7 +95,6 @@ export const ListApplicationsResponseItem = zod.object({
       salary: zod.string(),
       openings: zod.number(),
       applicationLink: zod.string(),
-      official_url: zod.string(),
       createdAt: zod.string(),
     })
     .optional(),
@@ -112,12 +108,6 @@ export const CreateApplicationBody = zod.object({
   jobId: zod.number(),
   applicantName: zod.string(),
   applicantEmail: zod.string(),
-  applicantPhone: zod.string().optional(),
-  applicantAddress: zod.string().optional(),
-  education: zod.string().optional(),
-  qualification: zod.string().optional(),
-  resumeUrl: zod.string().optional(),
-  acceptedTerms: zod.boolean().optional(),
   coverLetter: zod.string().optional(),
 });
 
@@ -156,7 +146,6 @@ export const UpdateApplicationStatusResponse = zod.object({
       salary: zod.string(),
       openings: zod.number(),
       applicationLink: zod.string(),
-      official_url: zod.string(),
       createdAt: zod.string(),
     })
     .optional(),
@@ -178,7 +167,6 @@ export const GetJobApplicantCountResponse = zod.object({
     Interview: zod.number().optional(),
     Offered: zod.number().optional(),
     Rejected: zod.number().optional(),
-    REDIRECTED: zod.number().optional(),
   }),
 });
 
@@ -212,7 +200,6 @@ export const ListMessagesResponseItem = zod.object({
       salary: zod.string(),
       openings: zod.number(),
       applicationLink: zod.string(),
-      official_url: zod.string(),
       createdAt: zod.string(),
     })
     .optional(),
@@ -245,7 +232,6 @@ export const ListExamsResponseItem = zod.object({
   eligibility: zod.string(),
   applicationGuide: zod.string(),
   officialWebsite: zod.string(),
-  official_url: zod.string().optional(),
   createdAt: zod.string(),
 });
 export const ListExamsResponse = zod.array(ListExamsResponseItem);
@@ -269,7 +255,6 @@ export const GetExamResponse = zod.object({
   eligibility: zod.string(),
   applicationGuide: zod.string(),
   officialWebsite: zod.string(),
-  official_url: zod.string().optional(),
   createdAt: zod.string(),
 });
 

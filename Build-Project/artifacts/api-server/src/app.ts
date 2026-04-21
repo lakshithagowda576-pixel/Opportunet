@@ -51,7 +51,6 @@ app.use(session({
   },
 }));
 
-app.get("/", (req, res) => res.redirect("/api/health"));
 app.use("/api", router);
 
 export default app;

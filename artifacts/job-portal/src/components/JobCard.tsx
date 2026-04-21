@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { Building2, MapPin, Clock, IndianRupee, Users, ChevronRight, Calendar, Mail, ExternalLink, AlertCircle, CheckCircle2, Eye, ArrowRight, X } from "lucide-react";
+import { Building2, MapPin, Clock, IndianRupee, Users, ChevronRight, Calendar, Mail, ExternalLink, AlertCircle, CheckCircle2, Eye, ArrowRight, X, Briefcase } from "lucide-react";
 import { Job, JobCategory } from "@workspace/api-client-react";
 import { formatDate, cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -302,41 +302,69 @@ export function JobCard({ job, applicantCount }: JobCardProps) {
                 <ArrowRight className="w-5 h-5 text-primary" /> How to Apply
               </h3>
               <div className="bg-gray-50 border border-border rounded-xl p-4 space-y-3">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
-                  <div>
-                    <div className="font-semibold text-foreground">Click Apply Buttton</div>
-                    <div className="text-sm text-muted-foreground mt-0.5">Start your application through the portal</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
-                  <div>
-                    <div className="font-semibold text-foreground">Submit Your Details</div>
-                    <div className="text-sm text-muted-foreground mt-0.5">Fill in your personal and professional information</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
-                  <div>
-                    <div className="font-semibold text-foreground">Upload Documents</div>
-                    <div className="text-sm text-muted-foreground mt-0.5">Provide resume, certifications, and required documents</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">4</div>
-                  <div>
-                    <div className="font-semibold text-foreground">Review & Submit</div>
-                    <div className="text-sm text-muted-foreground mt-0.5">Verify your information and submit your application</div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">5</div>
-                  <div>
-                    <div className="font-semibold text-foreground">Track Status</div>
-                    <div className="text-sm text-muted-foreground mt-0.5">Monitor your application status in the portal</div>
-                  </div>
-                </div>
+                {job.applicationGuide ? (
+                  job.applicationGuide.split("\n").filter(s => s.trim()).map((step, i) => {
+                    const cleanStep = step.replace(/^Step \d+:\s*/i, "");
+                    const parts = cleanStep.split(/:(.+)/);
+                    return (
+                      <div key={i} className="flex items-start gap-4">
+                        <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">{i + 1}</div>
+                        <div>
+                          <div className={cn("text-foreground", parts[1] ? "font-semibold" : "pt-1 text-sm font-medium")}>{parts[0]}</div>
+                          {parts[1] && <div className="text-sm text-muted-foreground mt-0.5">{parts[1].trim()}</div>}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : hasExternalApply ? (
+                  <>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                      <div>
+                        <div className="font-semibold text-foreground">Redirect to Official Portal</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">Click the apply button to visit the employer's official website.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                      <div>
+                        <div className="font-semibold text-foreground">Create/Login to Account</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">Register or log in to the external career portal.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                      <div>
+                        <div className="font-semibold text-foreground">Submit Application</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">Fill in your details and upload required documents on their platform.</div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">1</div>
+                      <div>
+                        <div className="font-semibold text-foreground">Click Apply Button</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">Start your application directly through OpportuNet.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">2</div>
+                      <div>
+                        <div className="font-semibold text-foreground">Review Profile Data</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">Ensure your OpportuNet profile and resume are up-to-date.</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center font-bold text-sm">3</div>
+                      <div>
+                        <div className="font-semibold text-foreground">One-Click Submit</div>
+                        <div className="text-sm text-muted-foreground mt-0.5">Submit your application instantly and track it in your dashboard.</div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Briefcase, LayoutDashboard, FileText, GraduationCap, Menu, X,
   Bell, Shield, LogOut, LogIn, ChevronDown, User,
-  Github, Twitter, Linkedin, Mail, MapPin, Phone, ExternalLink, Sparkles
+  Github, Twitter, Mail, MapPin, Phone, ExternalLink, Sparkles
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
@@ -274,7 +274,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       {/* Premium Footer */}
       <footer className="bg-card border-t border-border pt-20 pb-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-16">
             {/* Branding */}
             <div className="space-y-6">
               <Link href="/" className="flex items-center gap-2">
@@ -287,7 +287,7 @@ export function AppLayout({ children }: AppLayoutProps) {
                 Empowering candidates across IT, Non-IT, and Government sectors with real-time opportunities and comprehensive exam resources.
               </p>
               <div className="flex gap-4">
-                {[Github, Twitter, Linkedin].map((Icon, i) => (
+                {[Github, Twitter].map((Icon, i) => (
                   <a key={i} href="#" className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm">
                     <Icon className="w-5 h-5" />
                   </a>
@@ -326,28 +326,8 @@ export function AppLayout({ children }: AppLayoutProps) {
                   </div>
                   Bangalore, Karnataka
                 </li>
-                <li className="flex items-center gap-3 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors group">
-                  <div className="w-9 h-9 rounded-xl bg-secondary flex items-center justify-center group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  +91 80 4567 8900
-                </li>
-              </ul>
-            </div>
 
-            {/* Newsletter/Action */}
-            <div className="space-y-6">
-              <h4 className="font-black text-foreground mb-6 uppercase tracking-widest text-xs">Stay Updated</h4>
-              <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10 relative overflow-hidden group">
-                <div className="absolute -right-8 -bottom-8 w-24 h-24 bg-primary/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                <p className="text-xs font-bold text-primary mb-3 flex items-center gap-2">
-                  <Sparkles className="w-3.5 h-3.5" /> Premium Features
-                </p>
-                <p className="text-sm font-bold text-foreground mb-4">Want real-time SMS alerts for new jobs?</p>
-                <Link href="/profile" className="inline-flex items-center gap-2 text-xs font-black text-primary hover:underline">
-                  Enable Notifications <ExternalLink className="w-3 h-3" />
-                </Link>
-              </div>
+              </ul>
             </div>
           </div>
 

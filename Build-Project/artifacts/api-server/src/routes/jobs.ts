@@ -3,7 +3,6 @@ import { db } from "@workspace/db";
 import { jobsTable } from "@workspace/db/schema";
 import { eq, like, or, and } from "drizzle-orm";
 import { ListJobsQueryParams, GetJobParams } from "@workspace/api-zod";
-import { normalizeJobRecord } from "../lib/normalize-job";
 
 const router: IRouter = Router();
 
@@ -37,7 +36,10 @@ router.get("/jobs", async (req, res) => {
       ? await db.select().from(jobsTable).where(conditions[0])
       : await db.select().from(jobsTable).where(and(...conditions));
 
-  const formatted = jobs.map((j: any) => normalizeJobRecord(j));
+  const formatted = jobs.map((j) => ({
+    ...j,
+    createdAt: j.createdAt.toISOString(),
+  }));
   res.json(formatted);
 });
 
@@ -48,7 +50,7 @@ router.get("/jobs/:id", async (req, res) => {
     res.status(404).json({ error: "Job not found" });
     return;
   }
-  res.json(normalizeJobRecord(job));
+  res.json({ ...job, createdAt: job.createdAt.toISOString() });
 });
 
 export default router;

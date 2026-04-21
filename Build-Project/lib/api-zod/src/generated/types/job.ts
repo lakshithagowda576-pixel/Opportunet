@@ -24,6 +24,5 @@ export interface Job {
   salary: string;
   openings: number;
   applicationLink: string;
-  official_url: string;
   createdAt: string;
 }

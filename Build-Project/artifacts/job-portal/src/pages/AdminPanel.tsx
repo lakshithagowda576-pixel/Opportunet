@@ -30,15 +30,14 @@ export default function AdminPanel() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
-  const [jobFilter, setJobFilter] = useState<number | null>(null);
 
-  // Redirect if not admin or hr
-  if (!user || (user.role !== "admin" && user.role !== "hr")) {
+  // Redirect if not admin
+  if (!user || user.role !== "admin") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <Shield className="w-16 h-16 text-muted-foreground opacity-40" />
         <h2 className="text-xl font-bold">Admin Access Required</h2>
-        <p className="text-muted-foreground text-sm">You need admin or HR privileges to access this page.</p>
+        <p className="text-muted-foreground text-sm">You need admin privileges to access this page.</p>
         <button onClick={() => navigate("/login")} className="px-6 py-2.5 bg-primary text-white rounded-xl font-semibold">
           Sign In as Admin
         </button>
@@ -75,15 +74,7 @@ export default function AdminPanel() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       }),
-    onSuccess: (data: any, variables) => { 
-      qc.invalidateQueries({ queryKey: ["admin-applications"] }); 
-      qc.invalidateQueries({ queryKey: ["admin-stats"] });
-      if (variables.status === "Interview" || variables.status === "Pending" || variables.status === "Rejected") {
-        toast({ title: "Status Updated", description: `Application status changed to ${variables.status}. An automated email has been sent to the applicant.` });
-      } else {
-        toast({ title: "Status Updated", description: `Application status changed to ${variables.status}.` });
-      }
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["admin-applications"] }); qc.invalidateQueries({ queryKey: ["admin-stats"] }); },
   });
 
   // Email modal
@@ -112,8 +103,8 @@ export default function AdminPanel() {
   const tabs: { id: AdminTab; label: string; icon: typeof BarChart3 }[] = [
     { id: "dashboard", label: "Dashboard", icon: BarChart3 },
     { id: "applications", label: "Applications", icon: FileText },
-    ...(user.role === "admin" ? [{ id: "hr-emails" as AdminTab, label: "HR Emails", icon: Mail }] : []),
-    ...(user.role === "admin" ? [{ id: "users" as AdminTab, label: "Users", icon: Users }] : []),
+    { id: "hr-emails", label: "HR Emails", icon: Mail },
+    { id: "users", label: "Users", icon: Users },
   ];
 
   return (
@@ -165,35 +156,6 @@ export default function AdminPanel() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
-              <h4 className="font-semibold text-sm mb-3">Applications by Status</h4>
-              <div className="space-y-2">
-                {Object.entries((stats as any)?.byStatus || {}).map(([status, count]) => (
-                  <div key={status} className="flex items-center justify-between text-sm">
-                    <span className={cn("px-2 py-0.5 rounded-full border text-xs font-semibold", STATUS_COLORS[status] || "bg-secondary text-secondary-foreground border-border")}>
-                      {status}
-                    </span>
-                    <span className="font-bold">{count as number}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
-              <h4 className="font-semibold text-sm mb-3">Applications by Module</h4>
-              <div className="space-y-2">
-                {Object.entries((stats as any)?.byCategory || {}).map(([category, count]) => (
-                  <div key={category} className="flex items-center justify-between text-sm">
-                    <span className="px-2 py-0.5 rounded-full border text-xs font-semibold bg-secondary text-secondary-foreground border-border">
-                      {String(category).replace("_", " ")}
-                    </span>
-                    <span className="font-bold">{count as number}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
           {/* Recent Applications */}
           <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <div className="p-5 border-b border-border flex items-center justify-between">
@@ -227,25 +189,11 @@ export default function AdminPanel() {
       {/* Applications Tab */}
       {activeTab === "applications" && (
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-          <div className="p-5 border-b border-border flex items-center justify-between flex-wrap gap-3">
-            <h3 className="font-bold text-base flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> All Applications ({(applications as any[]).filter((app: any) => !jobFilter || app.jobId === jobFilter).length})</h3>
-            <div className="flex items-center gap-2 flex-wrap">
-              {user.role === "hr" && (
-                <select 
-                  value={jobFilter || ""} 
-                  onChange={e => setJobFilter(e.target.value ? parseInt(e.target.value) : null)}
-                  className="px-3 py-1.5 rounded-lg border border-border text-sm bg-background text-foreground outline-none hover:border-primary transition-colors"
-                >
-                  <option value="">All Jobs</option>
-                  {(allJobs as any[]).map(job => (
-                    <option key={job.id} value={job.id}>{job.title} - {job.company}</option>
-                  ))}
-                </select>
-              )}
-              <button onClick={() => qc.invalidateQueries({ queryKey: ["admin-applications"] })} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-                <RefreshCw className="w-4 h-4" />
-              </button>
-            </div>
+          <div className="p-5 border-b border-border flex items-center justify-between">
+            <h3 className="font-bold text-base flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> All Applications ({(applications as any[]).length})</h3>
+            <button onClick={() => qc.invalidateQueries({ queryKey: ["admin-applications"] })} className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
           {isAppsLoading ? (
             <div className="flex justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
@@ -262,7 +210,7 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(applications as any[]).filter((app: any) => !jobFilter || app.jobId === jobFilter).map((app: any) => (
+                  {(applications as any[]).map((app: any) => (
                     <tr key={app.id} className="hover:bg-secondary/20 transition-colors">
                       <td className="py-3 px-4">
                         <p className="font-semibold text-foreground">{app.applicantName}</p>
@@ -287,17 +235,7 @@ export default function AdminPanel() {
                         </select>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="flex gap-1.5 flex-wrap">
-                          <button
-                            onClick={() => statusMutation.mutate({ id: app.id, status: "Reviewed" })}
-                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors" title="Mark as Reviewed">
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => statusMutation.mutate({ id: app.id, status: "Interview" })}
-                            className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors" title="Schedule Interview">
-                            <Clock className="w-4 h-4" />
-                          </button>
+                        <div className="flex gap-2">
                           <button
                             onClick={() => statusMutation.mutate({ id: app.id, status: "Offered" })}
                             className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors" title="Accept">

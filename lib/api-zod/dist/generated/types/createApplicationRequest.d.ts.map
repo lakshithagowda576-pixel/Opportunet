@@ -1,0 +1,1 @@
+{"version":3,"file":"createApplicationRequest.d.ts","sourceRoot":"","sources":["../../../src/generated/types/createApplicationRequest.ts"],"names":[],"mappings":"AAAA;;;;;;GAMG;AAEH,MAAM,WAAW,wBAAwB;IACvC,KAAK,EAAE,MAAM,CAAC;IACd,aAAa,EAAE,MAAM,CAAC;IACtB,cAAc,EAAE,MAAM,CAAC;IACvB,WAAW,CAAC,EAAE,MAAM,CAAC;CACtB"}

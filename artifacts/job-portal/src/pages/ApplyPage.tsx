@@ -199,8 +199,8 @@ export default function ApplyPage() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button onClick={() => navigate("/applications")} className="px-8 py-4 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-            Track My Applications
+          <button onClick={() => navigate(`/applications?id=${trackingId}`)} className="px-8 py-4 rounded-2xl bg-primary text-white font-black shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+            Track This Application
           </button>
           <button onClick={() => navigate("/jobs")} className="px-8 py-4 rounded-2xl bg-secondary text-secondary-foreground font-bold hover:bg-secondary/80 transition-all">
             Browse More Jobs
@@ -326,201 +326,154 @@ export default function ApplyPage() {
               ))}
             </div>
 
-            <form onSubmit={handleSubmit} className="p-8 md:p-12 space-y-8">
-              {/* Step 1: Personal Details */}
-              {currentStep === 1 && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                  <div>
-                    <h2 className="text-3xl font-display font-black text-foreground mb-2">Personal Information</h2>
-                    <p className="text-muted-foreground">Let's start with your basic contact details.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2.5">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</label>
-                      <div className="relative group">
-                        <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <input 
-                          required name="applicantName" type="text" value={formData.applicantName} onChange={handleInputChange}
-                          className="w-full pl-12 pr-4 py-4 rounded-2xl bg-background border-2 border-transparent focus:border-primary/20 focus:bg-white outline-none transition-all shadow-inner-sm text-sm font-medium"
-                          placeholder="Rahul Sharma"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2.5">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Email Address</label>
-                      <div className="relative opacity-70">
-                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                        <input 
-                          disabled value={formData.applicantEmail}
-                          className="w-full pl-12 pr-4 py-4 rounded-2xl bg-secondary border-2 border-transparent outline-none cursor-not-allowed text-sm font-medium"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2.5">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Phone Number</label>
-                      <div className="relative group">
-                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <input 
-                          required name="applicantPhone" type="tel" value={formData.applicantPhone} onChange={handleInputChange}
-                          className="w-full pl-12 pr-4 py-4 rounded-2xl bg-background border-2 border-transparent focus:border-primary/20 focus:bg-white outline-none transition-all shadow-inner-sm text-sm font-medium"
-                          placeholder="+91 XXXXX XXXXX"
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2.5">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Current City</label>
-                      <div className="relative group">
-                        <AddressIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <input 
-                          required name="applicantAddress" type="text" value={formData.applicantAddress} onChange={handleInputChange}
-                          className="w-full pl-12 pr-4 py-4 rounded-2xl bg-background border-2 border-transparent focus:border-primary/20 focus:bg-white outline-none transition-all shadow-inner-sm text-sm font-medium"
-                          placeholder="e.g. Bangalore, KA"
-                        />
-                      </div>
-                    </div>
-                  </div>
+            <form onSubmit={handleSubmit} className="p-8 md:p-12 space-y-12">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div>
+                  <h2 className="text-2xl font-display font-black text-foreground mb-2 flex items-center gap-2"><User className="w-5 h-5 text-primary" /> Personal Information</h2>
+                  <p className="text-sm text-muted-foreground">Verify your contact details.</p>
                 </div>
-              )}
-
-              {/* Step 2: Academic & Skills */}
-              {currentStep === 2 && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                  <div>
-                    <h2 className="text-3xl font-display font-black text-foreground mb-2">Qualifications</h2>
-                    <p className="text-muted-foreground">Share your academic and professional milestones.</p>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className="space-y-2.5">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Highest Education Level</label>
-                      <select 
-                        required name="education" value={formData.education} onChange={handleInputChange}
-                        className="w-full px-5 py-4 rounded-2xl bg-background border-2 border-transparent focus:border-primary/20 focus:bg-white outline-none transition-all shadow-inner-sm text-sm font-bold appearance-none cursor-pointer"
-                      >
-                        <option value="">Select Education</option>
-                        <option value="high-school">High School (10th/12th)</option>
-                        <option value="diploma">Diploma</option>
-                        <option value="bachelor">Bachelor's Degree</option>
-                        <option value="master">Master's Degree</option>
-                        <option value="phd">Ph.D.</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-2.5">
-                      <label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">Skills & Certifications</label>
-                      <textarea 
-                        required name="qualification" value={formData.qualification} onChange={handleInputChange}
-                        rows={6}
-                        className="w-full px-5 py-4 rounded-2xl bg-background border-2 border-transparent focus:border-primary/20 focus:bg-white outline-none transition-all shadow-inner-sm text-sm font-medium resize-none leading-relaxed"
-                        placeholder="List your key skills (e.g. React, Node.js, SQL) and any certifications you hold."
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Resume Upload */}
-              {currentStep === 3 && (
-                <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500">
-                  <div>
-                    <h2 className="text-3xl font-display font-black text-foreground mb-2">Almost Done!</h2>
-                    <p className="text-muted-foreground">Upload your latest resume to complete the application.</p>
-                  </div>
-
-                  <div className="space-y-6">
-                    <div className={cn(
-                      "relative group border-2 border-dashed rounded-[2rem] p-10 transition-all flex flex-col items-center justify-center gap-4 text-center cursor-pointer",
-                      formData.resumeUrl ? "bg-emerald-50/50 border-emerald-200" : "bg-secondary/20 border-border hover:border-primary/40 hover:bg-primary/5"
-                    )}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Full Name</label>
+                    <div className="relative group">
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                       <input 
-                        required type="file" onChange={handleFileChange}
-                        accept=".pdf,.doc,.docx"
-                        className="absolute inset-0 opacity-0 cursor-pointer"
-                        disabled={isUploadingResume}
+                        required name="applicantName" type="text" value={formData.applicantName} onChange={handleInputChange}
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-background border border-border focus:border-primary/50 focus:bg-white outline-none transition-all text-sm font-medium shadow-sm"
+                        placeholder="Rahul Sharma"
                       />
-                      
-                      {isUploadingResume ? (
-                        <div className="flex flex-col items-center gap-4">
-                          <Loader2 className="w-12 h-12 animate-spin text-primary" />
-                          <p className="font-bold text-sm">Uploading your resume...</p>
-                        </div>
-                      ) : formData.resumeUrl ? (
-                        <>
-                          <div className="w-16 h-16 bg-emerald-500 text-white rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-200">
-                            <CheckCircle2 className="w-8 h-8" />
-                          </div>
-                          <div>
-                            <p className="font-black text-emerald-700">Resume Attached!</p>
-                            <p className="text-xs text-emerald-600 mt-1">Click to replace with a different file</p>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center border border-border group-hover:scale-110 transition-transform shadow-sm">
-                            <FileUp className="w-8 h-8 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-black text-foreground">Click to upload Resume</p>
-                            <p className="text-xs text-muted-foreground mt-1">PDF, DOC or DOCX (Max 5MB)</p>
-                          </div>
-                        </>
-                      )}
                     </div>
-
-                    <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10">
-                      <label className="flex items-start gap-4 cursor-pointer group">
-                        <div className="relative flex items-center mt-0.5">
-                          <input 
-                            required type="checkbox" checked={formData.acceptedTerms} onChange={() => setFormData(p => ({...p, acceptedTerms: !p.acceptedTerms}))}
-                            className="w-5 h-5 rounded border-2 border-primary/20 checked:bg-primary checked:border-primary transition-all cursor-pointer accent-primary"
-                          />
-                        </div>
-                        <span className="text-xs font-medium text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">
-                          I certify that the information provided is true and accurate. I understand that false information may lead to disqualification. I agree to <span className="text-primary underline">OpportuNet's Terms of Service</span>.
-                        </span>
-                      </label>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Email Address</label>
+                    <div className="relative opacity-70">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input disabled value={formData.applicantEmail} className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-secondary border border-transparent outline-none cursor-not-allowed text-sm font-medium" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Phone Number</label>
+                    <div className="relative group">
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input 
+                        required name="applicantPhone" type="tel" value={formData.applicantPhone} onChange={handleInputChange}
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-background border border-border focus:border-primary/50 focus:bg-white outline-none transition-all text-sm font-medium shadow-sm"
+                        placeholder="+91 XXXXX XXXXX"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Current City</label>
+                    <div className="relative group">
+                      <AddressIcon className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <input 
+                        required name="applicantAddress" type="text" value={formData.applicantAddress} onChange={handleInputChange}
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-background border border-border focus:border-primary/50 focus:bg-white outline-none transition-all text-sm font-medium shadow-sm"
+                        placeholder="e.g. Bangalore, KA"
+                      />
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
 
-              {/* Navigation Actions */}
-              <div className="flex flex-col sm:flex-row gap-4 pt-10 border-t border-border mt-6">
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 delay-100">
+                <div>
+                  <h2 className="text-2xl font-display font-black text-foreground mb-2 flex items-center gap-2"><BookOpen className="w-5 h-5 text-primary" /> Qualifications</h2>
+                  <p className="text-sm text-muted-foreground">Share your academic and professional milestones.</p>
+                </div>
+                <div className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Highest Education Level</label>
+                    <select 
+                      required name="education" value={formData.education} onChange={handleInputChange}
+                      className="w-full px-5 py-3.5 rounded-2xl bg-background border border-border focus:border-primary/50 focus:bg-white outline-none transition-all text-sm font-bold appearance-none cursor-pointer shadow-sm"
+                    >
+                      <option value="">Select Education</option>
+                      <option value="high-school">High School (10th/12th)</option>
+                      <option value="diploma">Diploma</option>
+                      <option value="bachelor">Bachelor's Degree</option>
+                      <option value="master">Master's Degree</option>
+                      <option value="phd">Ph.D.</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Skills & Experience</label>
+                    <textarea 
+                      required name="qualification" value={formData.qualification} onChange={handleInputChange}
+                      rows={4}
+                      className="w-full px-5 py-3.5 rounded-2xl bg-background border border-border focus:border-primary/50 focus:bg-white outline-none transition-all text-sm font-medium resize-none shadow-sm"
+                      placeholder="Briefly list your key skills and experience..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-500 delay-200">
+                <div>
+                  <h2 className="text-2xl font-display font-black text-foreground mb-2 flex items-center gap-2"><FileUp className="w-5 h-5 text-primary" /> Resume Upload</h2>
+                  <p className="text-sm text-muted-foreground">Attach your latest resume to complete the application.</p>
+                </div>
+                <div className="space-y-6">
+                  <div className={cn(
+                    "relative group border-2 border-dashed rounded-3xl p-8 transition-all flex flex-col items-center justify-center gap-3 text-center cursor-pointer",
+                    formData.resumeUrl ? "bg-emerald-50/50 border-emerald-200" : "bg-secondary/20 border-border hover:border-primary/40 hover:bg-primary/5"
+                  )}>
+                    <input 
+                      required type="file" onChange={handleFileChange} accept=".pdf,.doc,.docx"
+                      className="absolute inset-0 opacity-0 cursor-pointer" disabled={isUploadingResume}
+                    />
+                    {isUploadingResume ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                        <p className="font-bold text-sm">Uploading...</p>
+                      </div>
+                    ) : formData.resumeUrl ? (
+                      <>
+                        <div className="w-12 h-12 bg-emerald-500 text-white rounded-full flex items-center justify-center shadow-lg">
+                          <CheckCircle2 className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <p className="font-black text-emerald-700 text-sm">Resume Attached!</p>
+                          <p className="text-[10px] text-emerald-600 mt-1">Click to replace</p>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-sm">
+                          <FileUp className="w-5 h-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-foreground text-sm">Click to upload Resume</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">PDF, DOC (Max 5MB)</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                    <label className="flex items-start gap-3 cursor-pointer group">
+                      <div className="relative flex items-center mt-0.5">
+                        <input 
+                          required type="checkbox" checked={formData.acceptedTerms} onChange={() => setFormData(p => ({...p, acceptedTerms: !p.acceptedTerms}))}
+                          className="w-4 h-4 rounded border border-primary/20 checked:bg-primary accent-primary"
+                        />
+                      </div>
+                      <span className="text-[11px] font-medium text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">
+                        I certify the information provided is true and accurate. I agree to OpportuNet's Terms of Service.
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-border mt-6 flex justify-end">
                 <button 
-                  type="button" 
-                  onClick={() => {
-                    if (currentStep > 1) setCurrentStep(currentStep - 1);
-                    else navigate(`/jobs/${jobId}`);
-                  }}
-                  className="px-8 py-4 rounded-2xl font-bold bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all flex items-center justify-center gap-2 order-2 sm:order-1"
+                  type="submit" 
+                  disabled={isSubmitting || isUploadingResume || !formData.acceptedTerms}
+                  className="w-full sm:w-auto px-10 py-4 rounded-2xl font-black bg-gradient-to-r from-emerald-600 to-emerald-500 text-white shadow-xl shadow-emerald-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
                 >
-                  <ChevronLeft className="w-4 h-4" /> {currentStep === 1 ? "Cancel" : "Back"}
+                  {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckSquare className="w-5 h-5" /> Submit Application</>}
                 </button>
-                
-                {currentStep < 3 ? (
-                  <button 
-                    type="button" 
-                    onClick={() => {
-                      if (validateStep(currentStep)) {
-                        setCurrentStep(currentStep + 1);
-                      } else {
-                        toast({ title: "Wait!", description: "Please complete all fields to move forward.", variant: "destructive" });
-                      }
-                    }}
-                    className="flex-1 px-8 py-4 rounded-2xl font-black bg-primary text-white shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 order-1 sm:order-2"
-                  >
-                    Continue to Next Step <ChevronRight className="w-4 h-4" />
-                  </button>
-                ) : (
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting || isUploadingResume || !formData.acceptedTerms}
-                    className="flex-1 px-8 py-4 rounded-2xl font-black bg-emerald-600 text-white shadow-xl shadow-emerald-200 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100 order-1 sm:order-2"
-                  >
-                    {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><CheckSquare className="w-5 h-5" /> Submit Application</>}
-                  </button>
-                )}
               </div>
             </form>
           </div>

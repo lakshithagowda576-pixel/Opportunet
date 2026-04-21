@@ -1,33 +1,21 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { messagesTable, jobsTable, usersTable } from "@workspace/db/schema";
-import { desc, eq, or } from "drizzle-orm";
+import { messagesTable, jobsTable } from "@workspace/db/schema";
+import { eq } from "drizzle-orm";
 import { SendMessageBody } from "@workspace/api-zod";
-import { z } from "zod";
-import { requireAuth, requireAdminOrHR } from "../middleware/requireAuth";
-import { buildDefaultHrEmail, normalizeJobRecord } from "../lib/normalize-job";
 
 const router: IRouter = Router();
-router.use("/messages", requireAuth);
 
-async function getSessionUser(req: any) {
-  if (!req.session?.userId) return null;
-  const [user] = await db
-    .select()
-    .from(usersTable)
-    .where(eq(usersTable.id, req.session.userId));
-  return user;
-}
+const HR_REPLIES = [
+  "Thank you for reaching out. We have received your message and will get back to you within 2-3 business days.",
+  "We appreciate your interest in this position. Our team is currently reviewing applications and will contact shortlisted candidates shortly.",
+  "Thank you for contacting us. Please ensure you have submitted all required documents via our portal. We will reach out with further details.",
+  "Your message has been received. Our HR team is actively reviewing profiles. Please check your email regularly for updates.",
+  "Thank you for your inquiry. We appreciate your enthusiasm. You will be contacted if your profile matches our requirements.",
+];
 
 router.get("/messages", async (req, res) => {
-  const user = await getSessionUser(req);
-  if (!user) {
-    res.status(401).json({ error: "Unauthorized. Please log in." });
-    return;
-  }
-
-  const isPrivileged = user.role === "admin" || user.role === "hr";
-  const baseQuery = db
+  const msgs = await db
     .select({
       id: messagesTable.id,
       jobId: messagesTable.jobId,
@@ -43,32 +31,15 @@ router.get("/messages", async (req, res) => {
     .from(messagesTable)
     .leftJoin(jobsTable, eq(messagesTable.jobId, jobsTable.id));
 
-  const msgs = isPrivileged
-    ? await baseQuery.orderBy(desc(messagesTable.sentAt))
-    : await baseQuery
-        .where(
-          or(
-            eq(messagesTable.senderEmail, user.email),
-            eq(messagesTable.hrEmail, user.email)
-          )
-        )
-        .orderBy(desc(messagesTable.sentAt));
-
-  const formatted = msgs.map((m: any) => ({
+  const formatted = msgs.map((m) => ({
     ...m,
     sentAt: m.sentAt.toISOString(),
-    job: m.job ? normalizeJobRecord(m.job) : undefined,
+    job: m.job ? { ...m.job, createdAt: m.job.createdAt.toISOString() } : undefined,
   }));
   res.json(formatted);
 });
 
 router.post("/messages", async (req, res) => {
-  const user = await getSessionUser(req);
-  if (!user) {
-    res.status(401).json({ error: "Unauthorized. Please log in." });
-    return;
-  }
-
   const body = SendMessageBody.parse(req.body);
 
   const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, body.jobId));
@@ -76,63 +47,32 @@ router.post("/messages", async (req, res) => {
     res.status(404).json({ error: "Job not found" });
     return;
   }
-  const hrEmail = job.hrEmail || buildDefaultHrEmail(job.company);
 
   const [msg] = await db
     .insert(messagesTable)
     .values({
       jobId: body.jobId,
-      senderName: user.name || body.senderName,
-      senderEmail: user.email || body.senderEmail,
-      hrEmail,
+      senderName: body.senderName,
+      senderEmail: body.senderEmail,
+      hrEmail: job.hrEmail,
       subject: body.subject,
       body: body.body,
       isReply: false,
     })
     .returning();
 
+  const randomReply = HR_REPLIES[Math.floor(Math.random() * HR_REPLIES.length)];
+  await db.insert(messagesTable).values({
+    jobId: body.jobId,
+    senderName: `HR - ${job.company}`,
+    senderEmail: job.hrEmail,
+    hrEmail: body.senderEmail,
+    subject: `Re: ${body.subject}`,
+    body: randomReply,
+    isReply: true,
+  });
+
   res.status(201).json({ ...msg, sentAt: msg.sentAt.toISOString() });
-});
-
-router.post("/messages/:id/reply", requireAdminOrHR, async (req, res) => {
-  const params = z.object({ id: z.coerce.number().int().positive() }).parse(req.params);
-  const body = z.object({ body: z.string().min(1), subject: z.string().optional() }).parse(req.body);
-
-  const user = await getSessionUser(req);
-  if (!user) {
-    res.status(401).json({ error: "Unauthorized. Please log in." });
-    return;
-  }
-
-  const [source] = await db
-    .select()
-    .from(messagesTable)
-    .where(eq(messagesTable.id, params.id));
-  if (!source) {
-    res.status(404).json({ error: "Message not found." });
-    return;
-  }
-
-  const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, source.jobId));
-  const fallbackHrEmail = buildDefaultHrEmail(job?.company);
-  const senderEmail = user.email || job?.hrEmail || fallbackHrEmail;
-  const senderName = user.name || `HR - ${job?.company || "Team"}`;
-  const subject = body.subject || (source.subject.startsWith("Re:") ? source.subject : `Re: ${source.subject}`);
-
-  const [reply] = await db
-    .insert(messagesTable)
-    .values({
-      jobId: source.jobId,
-      senderName,
-      senderEmail,
-      hrEmail: source.senderEmail,
-      subject,
-      body: body.body,
-      isReply: true,
-    })
-    .returning();
-
-  res.status(201).json({ ...reply, sentAt: reply.sentAt.toISOString() });
 });
 
 export default router;

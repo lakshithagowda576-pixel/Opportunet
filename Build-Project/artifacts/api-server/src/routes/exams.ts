@@ -3,13 +3,15 @@ import { db } from "@workspace/db";
 import { examsTable, studyMaterialsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { GetExamParams } from "@workspace/api-zod";
-import { normalizeExamRecord } from "../lib/normalize-exam";
 
 const router: IRouter = Router();
 
 router.get("/exams", async (req, res) => {
   const exams = await db.select().from(examsTable);
-  const formatted = exams.map((e: any) => normalizeExamRecord(e));
+  const formatted = exams.map((e) => ({
+    ...e,
+    createdAt: e.createdAt.toISOString(),
+  }));
   res.json(formatted);
 });
 
@@ -20,12 +22,12 @@ router.get("/exams/:id", async (req, res) => {
     res.status(404).json({ error: "Exam not found" });
     return;
   }
-  res.json(normalizeExamRecord(exam));
+  res.json({ ...exam, createdAt: exam.createdAt.toISOString() });
 });
 
 router.get("/study-materials", async (req, res) => {
   const materials = await db.select().from(studyMaterialsTable);
-  const formatted = materials.map((m: any) => ({
+  const formatted = materials.map((m) => ({
     ...m,
     createdAt: m.createdAt.toISOString(),
   }));

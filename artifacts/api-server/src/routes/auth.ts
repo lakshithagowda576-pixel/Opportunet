@@ -18,7 +18,7 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-function getOAuthRedirectUri(req: any, provider: "google" | "github" | "facebook" | "linkedin") {
+function getOAuthRedirectUri(req: any, provider: "google" | "github" | "facebook") {
   const configuredBase = (process.env.OAUTH_CALLBACK_BASE_URL || "").replace(/\/$/, "");
   const inferredBase = `${req.protocol}://${req.get("host")}`;
   const base = configuredBase || inferredBase;
@@ -124,7 +124,7 @@ router.get("/me", async (req, res) => {
   res.json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
 });
 
-async function handleSocialLogin(req: any, res: any, ghUser: any, primaryEmail: string, provider: "google"|"facebook"|"linkedin"|"github") {
+async function handleSocialLogin(req: any, res: any, ghUser: any, primaryEmail: string, provider: "google"|"facebook"|"github") {
   let [user] = await db.select().from(usersTable).where(eq(usersTable.email, primaryEmail));
   if (!user) {
     const role = await determineUserRole(primaryEmail);
@@ -252,38 +252,6 @@ router.get("/facebook/callback", async (req, res) => {
     const email = ghUser.email || `${ghUser.id}@facebook.com`;
     ghUser.avatar_url = ghUser.picture?.data?.url;
     await handleSocialLogin(req, res, ghUser, email, "facebook");
-  } catch {
-    res.redirect(getFrontendLoginErrorUrl("OAuth failed"));
-  }
-});
-
-// LinkedIn OAuth
-router.get("/linkedin", (req, res) => {
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  if (!clientId) return res.redirect(getFrontendLoginErrorUrl("LinkedIn OAuth not configured"));
-  const redirectUri = getOAuthRedirectUri(req, "linkedin");
-  res.redirect(`https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=123456&scope=openid profile email`);
-});
-
-router.get("/linkedin/callback", async (req, res) => {
-  const { code } = req.query as { code: string };
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
-  const redirectUri = getOAuthRedirectUri(req, "linkedin");
-  if (!clientId || !clientSecret || !code) return res.redirect(getFrontendLoginErrorUrl("OAuth failed"));
-  try {
-    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: redirectUri, client_id: clientId, client_secret: clientSecret }),
-    });
-    const tokenData: any = await tokenRes.json();
-    const userRes = await fetch("https://api.linkedin.com/v2/userinfo", { headers: { Authorization: `Bearer ${tokenData.access_token}` }});
-    const ghUser: any = await userRes.json();
-    const email = ghUser.email || `${ghUser.sub}@linkedin.com`;
-    ghUser.name = ghUser.name || `${ghUser.given_name} ${ghUser.family_name}`;
-    ghUser.avatar_url = ghUser.picture;
-    await handleSocialLogin(req, res, ghUser, email, "linkedin");
   } catch {
     res.redirect(getFrontendLoginErrorUrl("OAuth failed"));
   }

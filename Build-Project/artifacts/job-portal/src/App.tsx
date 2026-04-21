@@ -7,14 +7,10 @@ import { AuthProvider } from "@/context/AuthContext";
 import Dashboard from "@/pages/Dashboard";
 import JobsDirectory from "@/pages/JobsDirectory";
 import JobDetails from "@/pages/JobDetails";
-import JobApplications from "@/pages/JobApplications";
 import ApplicationTracker from "@/pages/ApplicationTracker";
 import PgCetHub from "@/pages/PgCetHub";
-import PgCetResultFinder from "@/pages/PgCetResultFinder";
 import LoginPage from "@/pages/LoginPage";
-import ApplyPage from "@/pages/ApplyPage";
 import AdminPanel from "@/pages/AdminPanel";
-import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -32,14 +28,10 @@ function Router() {
           <Switch>
             <Route path="/" component={Dashboard} />
             <Route path="/jobs" component={JobsDirectory} />
-            <Route path="/jobs/:id/applications" component={JobApplications} />
             <Route path="/jobs/:id" component={JobDetails} />
-            <Route path="/jobs/:id/apply" component={ApplyPage} />
             <Route path="/applications" component={ApplicationTracker} />
             <Route path="/exams" component={PgCetHub} />
-            <Route path="/exams/result-finder" component={PgCetResultFinder} />
             <Route path="/admin" component={AdminPanel} />
-            <Route path="/profile" component={Profile} />
             <Route component={NotFound} />
           </Switch>
         </AppLayout>

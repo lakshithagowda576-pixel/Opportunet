@@ -4,9 +4,8 @@ interface AuthUser {
   id: number;
   name: string;
   email: string;
-  role: "user" | "admin" | "hr";
+  role: "user" | "admin";
   avatar?: string | null;
-  createdAt?: string;
 }
 
 interface AuthContextType {

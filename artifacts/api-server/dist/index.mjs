@@ -505,6 +505,121 @@ var require_browser = __commonJS({
   }
 });
 
+// ../../node_modules/.pnpm/has-flag@4.0.0/node_modules/has-flag/index.js
+var require_has_flag = __commonJS({
+  "../../node_modules/.pnpm/has-flag@4.0.0/node_modules/has-flag/index.js"(exports, module) {
+    "use strict";
+    module.exports = (flag, argv = process.argv) => {
+      const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
+      const position = argv.indexOf(prefix + flag);
+      const terminatorPosition = argv.indexOf("--");
+      return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
+    };
+  }
+});
+
+// ../../node_modules/.pnpm/supports-color@7.2.0/node_modules/supports-color/index.js
+var require_supports_color = __commonJS({
+  "../../node_modules/.pnpm/supports-color@7.2.0/node_modules/supports-color/index.js"(exports, module) {
+    "use strict";
+    var os = __require("os");
+    var tty = __require("tty");
+    var hasFlag = require_has_flag();
+    var { env } = process;
+    var forceColor;
+    if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
+      forceColor = 0;
+    } else if (hasFlag("color") || hasFlag("colors") || hasFlag("color=true") || hasFlag("color=always")) {
+      forceColor = 1;
+    }
+    if ("FORCE_COLOR" in env) {
+      if (env.FORCE_COLOR === "true") {
+        forceColor = 1;
+      } else if (env.FORCE_COLOR === "false") {
+        forceColor = 0;
+      } else {
+        forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
+      }
+    }
+    function translateLevel(level) {
+      if (level === 0) {
+        return false;
+      }
+      return {
+        level,
+        hasBasic: true,
+        has256: level >= 2,
+        has16m: level >= 3
+      };
+    }
+    function supportsColor(haveStream, streamIsTTY) {
+      if (forceColor === 0) {
+        return 0;
+      }
+      if (hasFlag("color=16m") || hasFlag("color=full") || hasFlag("color=truecolor")) {
+        return 3;
+      }
+      if (hasFlag("color=256")) {
+        return 2;
+      }
+      if (haveStream && !streamIsTTY && forceColor === void 0) {
+        return 0;
+      }
+      const min = forceColor || 0;
+      if (env.TERM === "dumb") {
+        return min;
+      }
+      if (process.platform === "win32") {
+        const osRelease = os.release().split(".");
+        if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
+          return Number(osRelease[2]) >= 14931 ? 3 : 2;
+        }
+        return 1;
+      }
+      if ("CI" in env) {
+        if (["TRAVIS", "CIRCLECI", "APPVEYOR", "GITLAB_CI", "GITHUB_ACTIONS", "BUILDKITE"].some((sign) => sign in env) || env.CI_NAME === "codeship") {
+          return 1;
+        }
+        return min;
+      }
+      if ("TEAMCITY_VERSION" in env) {
+        return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
+      }
+      if (env.COLORTERM === "truecolor") {
+        return 3;
+      }
+      if ("TERM_PROGRAM" in env) {
+        const version3 = parseInt((env.TERM_PROGRAM_VERSION || "").split(".")[0], 10);
+        switch (env.TERM_PROGRAM) {
+          case "iTerm.app":
+            return version3 >= 3 ? 3 : 2;
+          case "Apple_Terminal":
+            return 2;
+        }
+      }
+      if (/-256(color)?$/i.test(env.TERM)) {
+        return 2;
+      }
+      if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
+        return 1;
+      }
+      if ("COLORTERM" in env) {
+        return 1;
+      }
+      return min;
+    }
+    function getSupportLevel(stream) {
+      const level = supportsColor(stream, stream && stream.isTTY);
+      return translateLevel(level);
+    }
+    module.exports = {
+      supportsColor: getSupportLevel,
+      stdout: translateLevel(supportsColor(true, tty.isatty(1))),
+      stderr: translateLevel(supportsColor(true, tty.isatty(2)))
+    };
+  }
+});
+
 // ../../node_modules/.pnpm/debug@4.4.3/node_modules/debug/src/node.js
 var require_node = __commonJS({
   "../../node_modules/.pnpm/debug@4.4.3/node_modules/debug/src/node.js"(exports, module) {
@@ -523,7 +638,7 @@ var require_node = __commonJS({
     );
     exports.colors = [6, 2, 3, 4, 5, 1];
     try {
-      const supportsColor = __require("supports-color");
+      const supportsColor = require_supports_color();
       if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
         exports.colors = [
           20,
@@ -59814,7 +59929,8 @@ var applicationsTable = pgTable("applications", {
   acceptedTerms: boolean("accepted_terms").notNull().default(false),
   coverLetter: text("cover_letter"),
   status: applicationStatusEnum("status").notNull().default("Pending"),
-  appliedAt: timestamp("applied_at").defaultNow().notNull()
+  appliedAt: timestamp("applied_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
 var insertApplicationSchema = createInsertSchema(applicationsTable).omit({
   id: true,
@@ -60052,6 +60168,376 @@ function requireAdminOrHR(req, res, next) {
   next();
 }
 
+// src/lib/email-service.ts
+import nodemailer2 from "nodemailer";
+
+// src/lib/mailer.ts
+import nodemailer from "nodemailer";
+var emailSchema = external_exports.object({
+  to: external_exports.string().email(),
+  subject: external_exports.string().min(1),
+  body: external_exports.string().min(1),
+  applicantName: external_exports.string().optional()
+});
+async function sendEmail({ to, subject, body, applicantName }) {
+  const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+  const smtpPort = parseInt(process.env.SMTP_PORT || "587");
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  const fromEmail = process.env.SMTP_FROM || smtpUser || "noreply@opportu-net.com";
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    console.log(`[SIMULATED EMAIL] To: ${to}, Subject: ${subject}`);
+    return {
+      success: true,
+      simulated: true,
+      message: `Email would be sent to ${to}. Configure SMTP_HOST, SMTP_USER, SMTP_PASS environment variables for real email sending.`
+    };
+  }
+  try {
+    const transporter2 = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass }
+    });
+    await transporter2.sendMail({
+      from: `"OpportuNet Staff" <${fromEmail}>`,
+      to,
+      subject,
+      html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+        <div style="background: #2563eb; padding: 24px; text-align: center;">
+          <h1 style="color: white; margin: 0; font-size: 24px;">OpportuNet</h1>
+        </div>
+        <div style="padding: 32px; background: #ffffff;">
+          ${applicantName ? `<p style="font-size: 16px; color: #374151;">Dear <strong>${applicantName}</strong>,</p>` : ""}
+          <div style="white-space: pre-wrap; line-height: 1.6; color: #4b5563; font-size: 15px;">${body}</div>
+          <hr style="margin: 24px 0; border: none; border-top: 1px solid #f3f4f6;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">This email was sent from OpportuNet HR Management System.</p>
+        </div>
+      </div>`
+    });
+    return { success: true, message: `Email sent to ${to}` };
+  } catch (err) {
+    console.error(`Failed to send email to ${to}:`, err);
+    throw new Error(`Failed to send email: ${err.message}`);
+  }
+}
+
+// src/lib/email-service.ts
+var createTransporter = () => {
+  const smtpHost = process.env.SMTP_HOST;
+  const smtpPort = parseInt(process.env.SMTP_PORT || "587");
+  const smtpUser = process.env.SMTP_USER;
+  const smtpPass = process.env.SMTP_PASS;
+  if (!smtpHost || !smtpUser || !smtpPass) {
+    return null;
+  }
+  return nodemailer2.createTransport({
+    host: smtpHost,
+    port: smtpPort,
+    secure: smtpPort === 465,
+    auth: {
+      user: smtpUser,
+      pass: smtpPass
+    }
+  });
+};
+function getStatusColor(status) {
+  const colors = {
+    Pending: "#f59e0b",
+    Reviewed: "#3b82f6",
+    Interview: "#8b5cf6",
+    Offered: "#10b981",
+    Rejected: "#ef4444"
+  };
+  return colors[status] || "#6b7280";
+}
+async function sendDailyJobUpdateEmail(userId) {
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user) {
+      console.log(`User ${userId} not found for email notification`);
+      return;
+    }
+    const userApplications = await db.select({
+      id: applicationsTable.id,
+      jobId: applicationsTable.jobId,
+      status: applicationsTable.status,
+      appliedAt: applicationsTable.appliedAt,
+      jobTitle: jobsTable.title,
+      company: jobsTable.company,
+      jobDescription: jobsTable.description
+    }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).where(eq(applicationsTable.applicantEmail, user.email));
+    if (userApplications.length === 0) {
+      console.log(`No applications found for user ${user.email}`);
+      return;
+    }
+    const statusCounts = {
+      Pending: 0,
+      Reviewed: 0,
+      Interview: 0,
+      Offered: 0,
+      Rejected: 0
+    };
+    let applicationsList = "";
+    for (const app2 of userApplications) {
+      statusCounts[app2.status]++;
+      applicationsList += `
+        <tr>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left;">${app2.jobTitle}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left;">${app2.company}</td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
+            <span style="background-color: ${getStatusColor(app2.status)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${app2.status}</span>
+          </td>
+          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #666;">${new Date(app2.appliedAt).toLocaleDateString()}</td>
+        </tr>
+      `;
+    }
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .content { background: white; padding: 20px; margin-top: 20px; border-radius: 8px; }
+            .stats { display: flex; gap: 10px; margin: 20px 0; }
+            .stat-box { background: #f3f4f6; padding: 15px; border-radius: 6px; text-align: center; flex: 1; }
+            .stat-number { font-size: 24px; font-weight: bold; color: #667eea; }
+            .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+            table { width: 100%; border-collapse: collapse; }
+            th { background: #f3f4f6; padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #e5e7eb; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>\u{1F4CA} Daily Job Application Update</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Your application status for ${(/* @__PURE__ */ new Date()).toLocaleDateString()}</p>
+            </div>
+
+            <div class="content">
+              <p>Hi ${user.name},</p>
+              <p>Here's your daily update on all job applications:</p>
+
+              <div class="stats">
+                <div class="stat-box">
+                  <div class="stat-number">${userApplications.length}</div>
+                  <div class="stat-label">Total Applications</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number">${statusCounts.Pending}</div>
+                  <div class="stat-label">Pending</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number">${statusCounts.Interview}</div>
+                  <div class="stat-label">Interviews</div>
+                </div>
+                <div class="stat-box">
+                  <div class="stat-number">${statusCounts.Offered}</div>
+                  <div class="stat-label">Offers</div>
+                </div>
+              </div>
+
+              <h2 style="margin-top: 25px; margin-bottom: 15px; color: #1f2937;">Application Status Details</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Job Title</th>
+                    <th>Company</th>
+                    <th>Status</th>
+                    <th>Applied Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${applicationsList}
+                </tbody>
+              </table>
+
+              <div style="margin-top: 25px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                <p style="margin: 0; color: #1e3a8a; font-size: 14px;">
+                  <strong>\u{1F4A1} Tip:</strong> Keep checking back daily for updates. If your status changes, you'll see it here immediately!
+                </p>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>\xA9 2026 OpportuNet. All rights reserved.<br/>
+              You're receiving this email because you have active job applications on our platform.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const result = await sendEmail({
+      to: user.email,
+      subject: `\u{1F4CA} Daily Job Application Update - ${userApplications.length} applications`,
+      body: applicationsList,
+      applicantName: user.name
+    });
+    const transporter2 = createTransporter();
+    if (transporter2) {
+      await transporter2.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: user.email,
+        subject: `\u{1F4CA} Daily Job Application Update - ${userApplications.length} applications`,
+        html
+      });
+      console.log(`Daily update email sent to ${user.email}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Daily update would be sent to ${user.email}`);
+    }
+  } catch (error40) {
+    console.error(`Failed to send email to user ${userId}:`, error40);
+  }
+}
+async function sendDailyJobOpeningsEmail(userId) {
+  try {
+    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
+    if (!user) {
+      return;
+    }
+    const allJobs = await db.select().from(jobsTable);
+    if (allJobs.length === 0) {
+      return;
+    }
+    let jobsList = "";
+    for (const job of allJobs.slice(0, 10)) {
+      jobsList += `
+        <div style="padding: 15px; background: #f9fafb; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid #667eea;">
+          <h3 style="margin: 0 0 5px 0; color: #1f2937;">${job.title}</h3>
+          <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">
+            <strong>${job.company}</strong> \u2022 ${job.location}
+            <br/>
+            <strong>Package:</strong> ${job.salary} | <strong>Openings:</strong> ${job.openings}
+          </p>
+          <a href="${process.env.FRONTEND_URL}/jobs/${job.id}" style="color: #667eea; text-decoration: none; font-weight: bold; font-size: 14px;">View Details \u2192</a>
+        </div>
+      `;
+    }
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
+            .header h1 { margin: 0; font-size: 24px; }
+            .content { background: white; padding: 20px; margin-top: 20px; border-radius: 8px; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>\u{1F3AF} New Job Opportunities</h1>
+              <p style="margin: 10px 0 0 0; opacity: 0.9;">Latest openings for ${(/* @__PURE__ */ new Date()).toLocaleDateString()}</p>
+            </div>
+
+            <div class="content">
+              <p>Hi ${user.name},</p>
+              <p>We found <strong>${allJobs.length}</strong> new job opportunities that might interest you!</p>
+
+              ${jobsList}
+
+              <div style="margin-top: 25px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                <p style="margin: 0; color: #1e3a8a; font-size: 14px;">
+                  <strong>\u{1F4CC} Don't miss out!</strong> New jobs are posted regularly. Check back daily or apply now to increase your chances.
+                </p>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>\xA9 2026 OpportuNet. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const transporter2 = createTransporter();
+    if (transporter2) {
+      await transporter2.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: user.email,
+        subject: `\u{1F3AF} Today's Top Job Opportunities - ${allJobs.length} New Openings`,
+        html
+      });
+      console.log(`Job openings email sent to ${user.email}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Job openings email would be sent to ${user.email}`);
+    }
+  } catch (error40) {
+    console.error(`Failed to send job openings email to user ${userId}:`, error40);
+  }
+}
+async function sendApplicationConfirmationEmail(applicationId) {
+  try {
+    const [application] = await db.select({
+      id: applicationsTable.id,
+      applicantEmail: applicationsTable.applicantEmail,
+      applicantName: applicationsTable.applicantName,
+      jobTitle: jobsTable.title,
+      company: jobsTable.company
+    }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).where(eq(applicationsTable.id, applicationId));
+    if (!application) return;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
+            .content { background: white; padding: 30px; margin-top: 20px; border-radius: 8px; }
+            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Application Submitted</h1>
+            </div>
+            <div class="content">
+              <p>Hi ${application.applicantName},</p>
+              <p>We have successfully received your application for the following position:</p>
+              <h2 style="margin: 10px 0; color: #667eea;">${application.jobTitle}</h2>
+              <p style="color: #666; margin: 0;">at <strong>${application.company}</strong></p>
+              <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
+                <p style="margin: 0; color: #1e3a8a; font-size: 16px;">
+                  <strong>Your Application ID:</strong> ${application.id}
+                </p>
+              </div>
+              <p style="margin-top: 20px;">You can track your application status anytime from your <strong>My Applications</strong> dashboard.</p>
+              <p style="margin-top: 30px;">Best regards,<br/><strong>OpportuNet Team</strong></p>
+            </div>
+            <div class="footer">
+              <p>\xA9 2026 OpportuNet. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const transporter2 = createTransporter();
+    if (transporter2) {
+      await transporter2.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: application.applicantEmail,
+        subject: `Application Submitted Successfully - ${application.jobTitle}`,
+        html
+      });
+      console.log(`Confirmation email sent to ${application.applicantEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Confirmation email would be sent to ${application.applicantEmail}`);
+    }
+  } catch (error40) {
+    console.error(`Failed to send confirmation email for application ${applicationId}:`, error40);
+  }
+}
+
 // src/routes/applications.ts
 var router3 = (0, import_express3.Router)();
 router3.use("/applications", requireAuth);
@@ -60121,6 +60607,7 @@ router3.post("/applications", async (req, res) => {
     coverLetter: body.coverLetter
   }).returning();
   res.status(201).json({ ...app2, appliedAt: app2.appliedAt.toISOString() });
+  sendApplicationConfirmationEmail(app2.id);
 });
 router3.patch("/applications/:id/status", async (req, res) => {
   const params = UpdateApplicationStatusParams.parse({ id: parseInt(req.params.id) });
@@ -60169,6 +60656,7 @@ router3.post("/applications/track", async (req, res) => {
     status: "Redirected"
   }).returning();
   const normalizedJob = normalizeJobRecord(job);
+  sendApplicationConfirmationEmail(app2.id);
   res.json({
     trackingId: app2.id,
     officialUrl: normalizedJob.official_url,
@@ -60479,93 +60967,10 @@ router5.get("/facebook/callback", async (req, res) => {
     res.redirect(getFrontendLoginErrorUrl("OAuth failed"));
   }
 });
-router5.get("/linkedin", (req, res) => {
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  if (!clientId) return res.redirect(getFrontendLoginErrorUrl("LinkedIn OAuth not configured"));
-  const redirectUri = getOAuthRedirectUri(req, "linkedin");
-  res.redirect(`https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=123456&scope=openid profile email`);
-});
-router5.get("/linkedin/callback", async (req, res) => {
-  const { code } = req.query;
-  const clientId = process.env.LINKEDIN_CLIENT_ID;
-  const clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
-  const redirectUri = getOAuthRedirectUri(req, "linkedin");
-  if (!clientId || !clientSecret || !code) return res.redirect(getFrontendLoginErrorUrl("OAuth failed"));
-  try {
-    const tokenRes = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ grant_type: "authorization_code", code, redirect_uri: redirectUri, client_id: clientId, client_secret: clientSecret })
-    });
-    const tokenData = await tokenRes.json();
-    const userRes = await fetch("https://api.linkedin.com/v2/userinfo", { headers: { Authorization: `Bearer ${tokenData.access_token}` } });
-    const ghUser = await userRes.json();
-    const email3 = ghUser.email || `${ghUser.sub}@linkedin.com`;
-    ghUser.name = ghUser.name || `${ghUser.given_name} ${ghUser.family_name}`;
-    ghUser.avatar_url = ghUser.picture;
-    await handleSocialLogin(req, res, ghUser, email3, "linkedin");
-  } catch {
-    res.redirect(getFrontendLoginErrorUrl("OAuth failed"));
-  }
-});
 var auth_default = router5;
 
 // src/routes/admin.ts
 var import_express6 = __toESM(require_express2(), 1);
-
-// src/lib/mailer.ts
-import nodemailer from "nodemailer";
-var emailSchema = external_exports.object({
-  to: external_exports.string().email(),
-  subject: external_exports.string().min(1),
-  body: external_exports.string().min(1),
-  applicantName: external_exports.string().optional()
-});
-async function sendEmail({ to, subject, body, applicantName }) {
-  const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
-  const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  const fromEmail = process.env.SMTP_FROM || smtpUser || "noreply@opportu-net.com";
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    console.log(`[SIMULATED EMAIL] To: ${to}, Subject: ${subject}`);
-    return {
-      success: true,
-      simulated: true,
-      message: `Email would be sent to ${to}. Configure SMTP_HOST, SMTP_USER, SMTP_PASS environment variables for real email sending.`
-    };
-  }
-  try {
-    const transporter2 = nodemailer.createTransport({
-      host: smtpHost,
-      port: smtpPort,
-      secure: smtpPort === 465,
-      auth: { user: smtpUser, pass: smtpPass }
-    });
-    await transporter2.sendMail({
-      from: `"OpportuNet Staff" <${fromEmail}>`,
-      to,
-      subject,
-      html: `<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-        <div style="background: #2563eb; padding: 24px; text-align: center;">
-          <h1 style="color: white; margin: 0; font-size: 24px;">OpportuNet</h1>
-        </div>
-        <div style="padding: 32px; background: #ffffff;">
-          ${applicantName ? `<p style="font-size: 16px; color: #374151;">Dear <strong>${applicantName}</strong>,</p>` : ""}
-          <div style="white-space: pre-wrap; line-height: 1.6; color: #4b5563; font-size: 15px;">${body}</div>
-          <hr style="margin: 24px 0; border: none; border-top: 1px solid #f3f4f6;" />
-          <p style="color: #9ca3af; font-size: 12px; text-align: center;">This email was sent from OpportuNet HR Management System.</p>
-        </div>
-      </div>`
-    });
-    return { success: true, message: `Email sent to ${to}` };
-  } catch (err) {
-    console.error(`Failed to send email to ${to}:`, err);
-    throw new Error(`Failed to send email: ${err.message}`);
-  }
-}
-
-// src/routes/admin.ts
 var router6 = (0, import_express6.Router)();
 router6.use("/applications", requireAdminOrHR);
 router6.use("/send-email", requireAdminOrHR);
@@ -60975,13 +61380,17 @@ import bcrypt2 from "bcrypt";
 
 // src/lib/seed-data.ts
 var IT_JOBS = [
-  { title: "Summer Internship (June-August)", company: "Google India", location: "Bangalore, Karnataka", salary: "\u20B950k\u20131L Month", openings: 100, applicationLink: "https://careers.google.com" },
-  { title: "April Fast Track Hiring", company: "Meta India", location: "Mumbai, Maharashtra", salary: "\u20B920\u201330 LPA", openings: 50, applicationLink: "https://facebook.com/careers" },
+  { title: "Summer Internship (June-August)", company: "Google India", location: "Bangalore, Karnataka", salary: "\u20B950k\u20131L Month", openings: 100, applicationLink: "https://www.google.com/about/careers/applications/jobs/results/", startDate: "2024-03-01", endDate: "2024-05-30" },
+  { title: "Software Engineer, University Graduate", company: "Google India", location: "Bangalore, Karnataka", salary: "\u20B918\u201325 LPA", openings: 20, applicationLink: "https://www.google.com/about/careers/applications/jobs/results/", startDate: "2024-01-01", endDate: "2024-03-01" },
+  // CLOSED
+  { title: "April Fast Track Hiring", company: "Meta India", location: "Mumbai, Maharashtra", salary: "\u20B920\u201330 LPA", openings: 50, applicationLink: "https://www.metacareers.com/jobs/", startDate: "2024-04-01", endDate: "2024-06-30" },
   // ─── TIER 1 IT COMPANIES ───
-  { title: "Senior Software Engineer", company: "TCS (Tata Consultancy Services)", location: "Mumbai, Maharashtra", salary: "\u20B915\u201322 LPA", openings: 50, applicationLink: "https://nextstep.tcs.com" },
-  { title: "Data Scientist", company: "TCS (Tata Consultancy Services)", location: "Hyderabad, Telangana", salary: "\u20B918\u201328 LPA", openings: 30, applicationLink: "https://nextstep.tcs.com" },
-  { title: "DevOps Engineer", company: "TCS (Tata Consultancy Services)", location: "Chennai, Tamil Nadu", salary: "\u20B912\u201320 LPA", openings: 20, applicationLink: "https://nextstep.tcs.com" },
-  { title: "Full Stack Developer", company: "Infosys Limited", company2: "", location: "Bangalore, Karnataka", salary: "\u20B912\u201318 LPA", openings: 40, applicationLink: "https://www.infosys.com/careers" },
+  { title: "Senior Software Engineer", company: "TCS (Tata Consultancy Services)", location: "Mumbai, Maharashtra", salary: "\u20B915\u201322 LPA", openings: 50, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Data Scientist", company: "TCS (Tata Consultancy Services)", location: "Hyderabad, Telangana", salary: "\u20B918\u201328 LPA", openings: 30, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Graduate Trainee 2024", company: "TCS (Tata Consultancy Services)", location: "Pan India", salary: "\u20B93.5\u20137 LPA", openings: 500, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-01-01", endDate: "2024-02-15" },
+  // CLOSED
+  { title: "DevOps Engineer", company: "TCS (Tata Consultancy Services)", location: "Chennai, Tamil Nadu", salary: "\u20B912\u201320 LPA", openings: 20, applicationLink: "https://www.tcs.com/careers/india", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Full Stack Developer", company: "Infosys Limited", location: "Bangalore, Karnataka", salary: "\u20B912\u201318 LPA", openings: 40, applicationLink: "https://www.infosys.com/careers/", startDate: "2024-03-10", endDate: "2024-05-10" },
   { title: "Cloud Solutions Architect", company: "Infosys Limited", location: "Pune, Maharashtra", salary: "\u20B922\u201335 LPA", openings: 10, applicationLink: "https://www.infosys.com/careers" },
   { title: "AI/ML Engineer", company: "Infosys Limited", location: "Hyderabad, Telangana", salary: "\u20B920\u201332 LPA", openings: 15, applicationLink: "https://www.infosys.com/careers" },
   { title: "Senior Software Engineer", company: "Wipro Technologies", location: "Bangalore, Karnataka", salary: "\u20B918\u201328 LPA", openings: 12, applicationLink: "https://careers.wipro.com" },
@@ -61159,9 +61568,9 @@ var NONIT_JOBS = [
   { title: "Business Analyst \u2013 ERP", company: "SAP India", location: "Gurugram, Haryana", salary: "\u20B914\u201326 LPA", openings: 12, applicationLink: "https://jobs.sap.com/go/sap-india-jobs" }
 ];
 var STATE_GOVT_JOBS = [
-  { title: "Junior Engineer (Civil) \u2013 PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "\u20B927,300\u201352,650/month", openings: 250, applicationLink: "https://kpsc.kar.nic.in" },
-  { title: "Junior Engineer (Electrical) \u2013 PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "\u20B927,300\u201352,650/month", openings: 150, applicationLink: "https://kpsc.kar.nic.in" },
-  { title: "Junior Engineer (Mechanical)", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "\u20B927,300\u201352,650/month", openings: 80, applicationLink: "https://kpsc.kar.nic.in" },
+  { title: "Junior Engineer (Civil) \u2013 PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "\u20B927,300\u201352,650/month", openings: 250, applicationLink: "https://kpsc.kar.nic.in/notifications.html" },
+  { title: "Junior Engineer (Electrical) \u2013 PWD", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "\u20B927,300\u201352,650/month", openings: 150, applicationLink: "https://kpsc.kar.nic.in/notifications.html" },
+  { title: "Junior Engineer (Mechanical)", company: "Karnataka PWD (KPSC)", location: "Pan Karnataka", salary: "\u20B927,300\u201352,650/month", openings: 80, applicationLink: "https://kpsc.kar.nic.in/notifications.html" },
   { title: "Assistant Engineer (Civil)", company: "Karnataka Water Resources Dept (KPSC)", location: "Bangalore, Karnataka", salary: "\u20B934,500\u201362,000/month", openings: 120, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "Police Sub Inspector (PSI) \u2013 Civil", company: "Karnataka State Police (KPSC)", location: "Pan Karnataka", salary: "\u20B935,100\u201362,600/month", openings: 545, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "Police Sub Inspector (PSI) \u2013 Armed", company: "Karnataka State Police (KPSC)", location: "Pan Karnataka", salary: "\u20B935,100\u201362,600/month", openings: 200, applicationLink: "https://kpsc.kar.nic.in" },
@@ -61174,13 +61583,15 @@ var STATE_GOVT_JOBS = [
   { title: "ASHA Worker", company: "Karnataka NHM", location: "Rural Karnataka", salary: "\u20B94,000\u20138,000/month", openings: 5e3, applicationLink: "https://nhm.kar.nic.in" },
   { title: "Medical Officer \u2013 Primary Health Center", company: "Karnataka Health Dept (KPSC)", location: "Rural Karnataka", salary: "\u20B956,100\u20131,32,000/month", openings: 300, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "Specialist Doctor (Gynaecology)", company: "Karnataka Health Dept (KPSC)", location: "District Hospitals", salary: "\u20B967,700\u20131,52,000/month", openings: 80, applicationLink: "https://kpsc.kar.nic.in" },
-  { title: "Assistant Professor \u2013 Computer Science", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 85, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor \u2013 Electronics & Communication", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 75, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor \u2013 Mechanical Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 65, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor \u2013 Civil Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 60, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor \u2013 Mathematics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "\u20B937,400\u201367,000/month", openings: 120, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor \u2013 Physics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "\u20B937,400\u201367,000/month", openings: 100, applicationLink: "https://kea.kar.nic.in" },
-  { title: "Assistant Professor \u2013 Chemistry", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "\u20B937,400\u201367,000/month", openings: 90, applicationLink: "https://kea.kar.nic.in" },
+  { title: "Assistant Professor \u2013 Computer Science", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 85, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor \u2013 Electronics & Communication", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 75, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor \u2013 Mechanical Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 65, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor \u2013 Civil Engineering", company: "Karnataka Examinations Authority (KEA)", location: "Government Engineering Colleges", salary: "\u20B937,400\u201367,000/month", openings: 60, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "FDA/SDA 2023 Recruitment", company: "Karnataka KPSC", location: "Pan Karnataka", salary: "\u20B921,400\u201342,000/month", openings: 400, applicationLink: "https://kpsc.kar.nic.in/", startDate: "2023-09-01", endDate: "2023-10-15" },
+  // CLOSED
+  { title: "Assistant Professor \u2013 Mathematics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "\u20B937,400\u201367,000/month", openings: 120, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor \u2013 Physics", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "\u20B937,400\u201367,000/month", openings: 100, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
+  { title: "Assistant Professor \u2013 Chemistry", company: "Karnataka Examinations Authority (KEA)", location: "Government First Grade Colleges", salary: "\u20B937,400\u201367,000/month", openings: 90, applicationLink: "https://cetonline.karnataka.gov.in/kea/", startDate: "2024-03-15", endDate: "2024-05-15" },
   { title: "PGT Teacher (Computer Science)", company: "Karnataka Residential Schools (KREIS)", location: "Pan Karnataka", salary: "\u20B928,900\u201346,900/month", openings: 150, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "PGT Teacher (Kannada)", company: "Karnataka Residential Schools (KREIS)", location: "Pan Karnataka", salary: "\u20B928,900\u201346,900/month", openings: 200, applicationLink: "https://kpsc.kar.nic.in" },
   { title: "TGT Teacher (English Medium)", company: "Samagra Shiksha Karnataka", location: "Pan Karnataka", salary: "\u20B922,400\u201342,500/month", openings: 500, applicationLink: "https://kpsc.kar.nic.in" },
@@ -61714,261 +62125,6 @@ async function seedColleges() {
 // src/tasks.ts
 var import_node_cron = __toESM(require_node_cron(), 1);
 import nodemailer3 from "nodemailer";
-
-// src/lib/email-service.ts
-import nodemailer2 from "nodemailer";
-var createTransporter = () => {
-  const smtpHost = process.env.SMTP_HOST;
-  const smtpPort = parseInt(process.env.SMTP_PORT || "587");
-  const smtpUser = process.env.SMTP_USER;
-  const smtpPass = process.env.SMTP_PASS;
-  if (!smtpHost || !smtpUser || !smtpPass) {
-    return null;
-  }
-  return nodemailer2.createTransport({
-    host: smtpHost,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    auth: {
-      user: smtpUser,
-      pass: smtpPass
-    }
-  });
-};
-function getStatusColor(status) {
-  const colors = {
-    Pending: "#f59e0b",
-    Reviewed: "#3b82f6",
-    Interview: "#8b5cf6",
-    Offered: "#10b981",
-    Rejected: "#ef4444"
-  };
-  return colors[status] || "#6b7280";
-}
-async function sendDailyJobUpdateEmail(userId) {
-  try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    if (!user) {
-      console.log(`User ${userId} not found for email notification`);
-      return;
-    }
-    const userApplications = await db.select({
-      id: applicationsTable.id,
-      jobId: applicationsTable.jobId,
-      status: applicationsTable.status,
-      appliedAt: applicationsTable.appliedAt,
-      jobTitle: jobsTable.title,
-      company: jobsTable.company,
-      jobDescription: jobsTable.description
-    }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).where(eq(applicationsTable.applicantEmail, user.email));
-    if (userApplications.length === 0) {
-      console.log(`No applications found for user ${user.email}`);
-      return;
-    }
-    const statusCounts = {
-      Pending: 0,
-      Reviewed: 0,
-      Interview: 0,
-      Offered: 0,
-      Rejected: 0
-    };
-    let applicationsList = "";
-    for (const app2 of userApplications) {
-      statusCounts[app2.status]++;
-      applicationsList += `
-        <tr>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left;">${app2.jobTitle}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left;">${app2.company}</td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">
-            <span style="background-color: ${getStatusColor(app2.status)}; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 500;">${app2.status}</span>
-          </td>
-          <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-size: 12px; color: #666;">${new Date(app2.appliedAt).toLocaleDateString()}</td>
-        </tr>
-      `;
-    }
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .content { background: white; padding: 20px; margin-top: 20px; border-radius: 8px; }
-            .stats { display: flex; gap: 10px; margin: 20px 0; }
-            .stat-box { background: #f3f4f6; padding: 15px; border-radius: 6px; text-align: center; flex: 1; }
-            .stat-number { font-size: 24px; font-weight: bold; color: #667eea; }
-            .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
-            table { width: 100%; border-collapse: collapse; }
-            th { background: #f3f4f6; padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #e5e7eb; }
-            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>\u{1F4CA} Daily Job Application Update</h1>
-              <p style="margin: 10px 0 0 0; opacity: 0.9;">Your application status for ${(/* @__PURE__ */ new Date()).toLocaleDateString()}</p>
-            </div>
-
-            <div class="content">
-              <p>Hi ${user.name},</p>
-              <p>Here's your daily update on all job applications:</p>
-
-              <div class="stats">
-                <div class="stat-box">
-                  <div class="stat-number">${userApplications.length}</div>
-                  <div class="stat-label">Total Applications</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-number">${statusCounts.Pending}</div>
-                  <div class="stat-label">Pending</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-number">${statusCounts.Interview}</div>
-                  <div class="stat-label">Interviews</div>
-                </div>
-                <div class="stat-box">
-                  <div class="stat-number">${statusCounts.Offered}</div>
-                  <div class="stat-label">Offers</div>
-                </div>
-              </div>
-
-              <h2 style="margin-top: 25px; margin-bottom: 15px; color: #1f2937;">Application Status Details</h2>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Job Title</th>
-                    <th>Company</th>
-                    <th>Status</th>
-                    <th>Applied Date</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${applicationsList}
-                </tbody>
-              </table>
-
-              <div style="margin-top: 25px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
-                <p style="margin: 0; color: #1e3a8a; font-size: 14px;">
-                  <strong>\u{1F4A1} Tip:</strong> Keep checking back daily for updates. If your status changes, you'll see it here immediately!
-                </p>
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>\xA9 2026 OpportuNet. All rights reserved.<br/>
-              You're receiving this email because you have active job applications on our platform.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    const result = await sendEmail({
-      to: user.email,
-      subject: `\u{1F4CA} Daily Job Application Update - ${userApplications.length} applications`,
-      body: applicationsList,
-      applicantName: user.name
-    });
-    const transporter2 = createTransporter();
-    if (transporter2) {
-      await transporter2.sendMail({
-        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
-        to: user.email,
-        subject: `\u{1F4CA} Daily Job Application Update - ${userApplications.length} applications`,
-        html
-      });
-      console.log(`Daily update email sent to ${user.email}`);
-    } else {
-      console.log(`[SIMULATED EMAIL] Daily update would be sent to ${user.email}`);
-    }
-  } catch (error40) {
-    console.error(`Failed to send email to user ${userId}:`, error40);
-  }
-}
-async function sendDailyJobOpeningsEmail(userId) {
-  try {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId));
-    if (!user) {
-      return;
-    }
-    const allJobs = await db.select().from(jobsTable);
-    if (allJobs.length === 0) {
-      return;
-    }
-    let jobsList = "";
-    for (const job of allJobs.slice(0, 10)) {
-      jobsList += `
-        <div style="padding: 15px; background: #f9fafb; border-radius: 6px; margin-bottom: 10px; border-left: 4px solid #667eea;">
-          <h3 style="margin: 0 0 5px 0; color: #1f2937;">${job.title}</h3>
-          <p style="margin: 0 0 8px 0; color: #666; font-size: 14px;">
-            <strong>${job.company}</strong> \u2022 ${job.location}
-            <br/>
-            <strong>Package:</strong> ${job.salary} | <strong>Openings:</strong> ${job.openings}
-          </p>
-          <a href="${process.env.FRONTEND_URL}/jobs/${job.id}" style="color: #667eea; text-decoration: none; font-weight: bold; font-size: 14px;">View Details \u2192</a>
-        </div>
-      `;
-    }
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <style>
-            body { font-family: Arial, sans-serif; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
-            .header h1 { margin: 0; font-size: 24px; }
-            .content { background: white; padding: 20px; margin-top: 20px; border-radius: 8px; }
-            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>\u{1F3AF} New Job Opportunities</h1>
-              <p style="margin: 10px 0 0 0; opacity: 0.9;">Latest openings for ${(/* @__PURE__ */ new Date()).toLocaleDateString()}</p>
-            </div>
-
-            <div class="content">
-              <p>Hi ${user.name},</p>
-              <p>We found <strong>${allJobs.length}</strong> new job opportunities that might interest you!</p>
-
-              ${jobsList}
-
-              <div style="margin-top: 25px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
-                <p style="margin: 0; color: #1e3a8a; font-size: 14px;">
-                  <strong>\u{1F4CC} Don't miss out!</strong> New jobs are posted regularly. Check back daily or apply now to increase your chances.
-                </p>
-              </div>
-            </div>
-
-            <div class="footer">
-              <p>\xA9 2026 OpportuNet. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    const transporter2 = createTransporter();
-    if (transporter2) {
-      await transporter2.sendMail({
-        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
-        to: user.email,
-        subject: `\u{1F3AF} Today's Top Job Opportunities - ${allJobs.length} New Openings`,
-        html
-      });
-      console.log(`Job openings email sent to ${user.email}`);
-    } else {
-      console.log(`[SIMULATED EMAIL] Job openings email would be sent to ${user.email}`);
-    }
-  } catch (error40) {
-    console.error(`Failed to send job openings email to user ${userId}:`, error40);
-  }
-}
-
-// src/tasks.ts
 var transporter = nodemailer3.createTransport({
   host: process.env.SMTP_HOST || "smtp.ethereal.email",
   port: parseInt(process.env.SMTP_PORT || "587"),
@@ -62097,8 +62253,7 @@ function validateIntegrationConfig() {
   }
   const oauthProviders = [
     { name: "Google", id: process.env.GOOGLE_CLIENT_ID, secret: process.env.GOOGLE_CLIENT_SECRET },
-    { name: "GitHub", id: process.env.GITHUB_CLIENT_ID, secret: process.env.GITHUB_CLIENT_SECRET },
-    { name: "LinkedIn", id: process.env.LINKEDIN_CLIENT_ID, secret: process.env.LINKEDIN_CLIENT_SECRET }
+    { name: "GitHub", id: process.env.GITHUB_CLIENT_ID, secret: process.env.GITHUB_CLIENT_SECRET }
   ];
   for (const provider of oauthProviders) {
     if (!provider.id || !provider.secret) {
@@ -62131,7 +62286,7 @@ async function autoSeed() {
   const [jobsCount] = await db.select({ count: count() }).from(jobsTable);
   const [examsCount] = await db.select({ count: count() }).from(examsTable);
   if (jobsCount.count === 0) {
-    logger.info("Jobs table is empty \u2014 seeding jobs...");
+    logger.info("Jobs table is empty \u2014 seeding live jobs...");
     const allJobs = [
       ...buildJobRows(IT_JOBS, "IT"),
       ...buildJobRows(NONIT_JOBS, "NON_IT"),

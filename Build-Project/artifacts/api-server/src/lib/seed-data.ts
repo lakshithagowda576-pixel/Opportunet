@@ -1,8 +1,4 @@
-import { buildDefaultHrEmail } from "./normalize-job";
-
 export const IT_JOBS = [
-  { title: "Summer Internship (June-August)", company: "Google India", location: "Bangalore, Karnataka", salary: "₹50k–1L Month", openings: 100, applicationLink: "https://careers.google.com" },
-  { title: "April Fast Track Hiring", company: "Meta India", location: "Mumbai, Maharashtra", salary: "₹20–30 LPA", openings: 50, applicationLink: "https://facebook.com/careers" },
   // ─── TIER 1 IT COMPANIES ───
   { title: "Senior Software Engineer", company: "TCS (Tata Consultancy Services)", location: "Mumbai, Maharashtra", salary: "₹15–22 LPA", openings: 50, applicationLink: "https://nextstep.tcs.com" },
   { title: "Data Scientist", company: "TCS (Tata Consultancy Services)", location: "Hyderabad, Telangana", salary: "₹18–28 LPA", openings: 30, applicationLink: "https://nextstep.tcs.com" },
@@ -90,11 +86,6 @@ export const IT_JOBS = [
   { title: "Software Engineer – HPC", company: "Siemens India (Technology)", location: "Pune, Maharashtra", salary: "₹14–26 LPA", openings: 12, applicationLink: "https://jobs.siemens.com/careers" },
   { title: "IT Security Analyst", company: "Ernst & Young (EY) India", location: "Bangalore, Karnataka", salary: "₹12–22 LPA", openings: 20, applicationLink: "https://careers.ey.com" },
   { title: "Automation Test Lead", company: "Deloitte India", location: "Hyderabad, Telangana", salary: "₹14–24 LPA", openings: 18, applicationLink: "https://www2.deloitte.com/in/en/careers.html" },
-  { title: "Software Engineer (New Graduate)", company: "Intel", location: "Bangalore, Karnataka", salary: "₹18–25 LPA", openings: 30, applicationLink: "https://intel.jobs" },
-  { title: "Cloud System Engineer", company: "Oracle", location: "Hyderabad, Telangana", salary: "₹20–30 LPA", openings: 20, applicationLink: "https://oracle.jobs" },
-  { title: "QA Engineer (Automation)", company: "Cisco", location: "Pune, Maharashtra", salary: "₹15–25 LPA", openings: 15, applicationLink: "https://cisco.jobs" },
-  { title: "React Developer (Remote)", company: "Shopify India", location: "Remote", salary: "₹15–20 LPA", openings: 10, applicationLink: "https://shopify.com/careers" },
-  { title: "Backend Engineer (Go)", company: "DigitalOcean", location: "Bangalore, Karnataka", salary: "₹22–35 LPA", openings: 5, applicationLink: "https://digitalocean.com/careers" },
 ];
 
 export const NONIT_JOBS = [
@@ -385,20 +376,31 @@ function getShift(category: string): "Day" | "Night" | "Full_time" | "Part_time"
 
 function getDateRange(category: string): { startDate: string; endDate: string } {
   const bases = [
-    { start: "2026-02-01", end: "2026-03-15" }, // Past (Closed)
-    { start: "2026-03-01", end: "2026-03-31" }, // Past (Closed)
-    { start: "2026-04-01", end: "2026-04-30" }, // Current
-    { start: "2026-04-15", end: "2026-05-15" }, // Current
-    { start: "2026-05-01", end: "2026-05-31" }, // Future
-    { start: "2026-06-01", end: "2026-08-31" }, // Specific: June to August
-    { start: "2026-07-01", end: "2026-09-30" }, // Future
+    { start: "2026-03-01", end: "2026-04-30" },
+    { start: "2026-04-01", end: "2026-05-31" },
+    { start: "2026-04-15", end: "2026-06-15" },
+    { start: "2026-05-01", end: "2026-06-30" },
+    { start: "2026-05-15", end: "2026-07-15" },
+    { start: "2026-06-01", end: "2026-07-31" },
+    { start: "2026-07-01", end: "2026-08-31" },
+    { start: "2026-08-01", end: "2026-09-30" },
   ];
   const idx = Math.floor(Math.random() * bases.length);
   return { startDate: bases[idx].start, endDate: bases[idx].end };
 }
 
-function getHrEmail(company: string, _category: string): string {
-  return buildDefaultHrEmail(company);
+function getHrEmail(company: string, category: string): string {
+  const domain = company.toLowerCase()
+    .replace(/[^a-z0-9]/g, "")
+    .replace("staffselectioncommission", "ssc.gov")
+    .replace("unionpublicservicecommission", "upsc.gov")
+    .replace("railwayrecruitmentboard", "rrb.indianrailways.gov")
+    .replace("instituteofbankingpersonnelselectionibps", "ibps")
+    .replace("indianspaceresearchorganisationisro", "isro.gov")
+    .replace("defenceresearchdevelopmentorganisation", "drdo.gov");
+  if (category === "STATE_GOVT") return "recruitment@kpsc.kar.nic.in";
+  if (category === "CENTRAL_GOVT") return `recruitment@${domain.slice(0, 20)}.gov.in`;
+  return `hr@${domain.slice(0, 20)}.com`;
 }
 
 export function buildJobRows(
@@ -409,14 +411,7 @@ export function buildJobRows(
   category: "IT" | "NON_IT" | "STATE_GOVT" | "CENTRAL_GOVT"
 ) {
   return jobs.map(j => {
-    let { startDate, endDate } = getDateRange(category);
-    if (j.title.includes("June-August")) {
-      startDate = "2026-06-01";
-      endDate = "2026-08-31";
-    } else if (j.title.includes("April Fast Track")) {
-      startDate = "2026-04-01";
-      endDate = "2026-04-30";
-    }
+    const { startDate, endDate } = getDateRange(category);
     return {
       title: j.title,
       company: j.company,
@@ -432,7 +427,6 @@ export function buildJobRows(
       salary: j.salary,
       openings: j.openings,
       applicationLink: j.applicationLink,
-      official_url: j.applicationLink,
     };
   });
 }

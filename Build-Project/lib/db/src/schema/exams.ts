@@ -1,6 +1,6 @@
 import { pgTable, serial, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const studyMaterialTypeEnum = pgEnum("study_material_type", [
   "PDF",
@@ -39,7 +39,7 @@ export const studyMaterialsTable = pgTable("study_materials", {
 
 export const insertExamSchema = createInsertSchema(examsTable).omit({ id: true, createdAt: true });
 export const insertStudyMaterialSchema = createInsertSchema(studyMaterialsTable).omit({ id: true, createdAt: true });
-export type InsertExam = typeof examsTable.$inferInsert;
+export type InsertExam = z.infer<typeof insertExamSchema>;
 export type Exam = typeof examsTable.$inferSelect;
-export type InsertStudyMaterial = typeof studyMaterialsTable.$inferInsert;
+export type InsertStudyMaterial = z.infer<typeof insertStudyMaterialSchema>;
 export type StudyMaterial = typeof studyMaterialsTable.$inferSelect;

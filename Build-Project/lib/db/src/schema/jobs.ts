@@ -1,6 +1,6 @@
 import { pgTable, serial, text, integer, timestamp, pgEnum } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod";
+import { z } from "zod/v4";
 
 export const jobCategoryEnum = pgEnum("job_category", ["IT", "NON_IT", "STATE_GOVT", "CENTRAL_GOVT"]);
 export const shiftEnum = pgEnum("shift_type", ["Day", "Night", "Full_time", "Part_time"]);
@@ -21,11 +21,9 @@ export const jobsTable = pgTable("jobs", {
   salary: text("salary").notNull(),
   openings: integer("openings").notNull().default(1),
   applicationLink: text("application_link").notNull().default(""),
-  official_url: text("official_url").notNull().default(""),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const insertJobSchema = createInsertSchema(jobsTable).omit({ id: true, createdAt: true });
-export type InsertJob = typeof jobsTable.$inferInsert;
+export type InsertJob = z.infer<typeof insertJobSchema>;
 export type Job = typeof jobsTable.$inferSelect;

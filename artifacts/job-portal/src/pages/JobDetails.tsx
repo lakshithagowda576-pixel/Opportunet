@@ -28,6 +28,7 @@ export default function JobDetails() {
 
   const [hasApplied, setHasApplied] = useState(false);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   const canApply = user && new Date() <= new Date(job?.endDate || new Date());
 
@@ -111,7 +112,7 @@ export default function JobDetails() {
                   <p className="text-emerald-600 text-xs mt-1">HR will be notified shortly.</p>
                </div>
             )}
-            {!hasApplied && (
+            {!hasApplied && !externalApplyUrl && (
                user ? (
                  <Link 
                    href={`/jobs/${jobId}/apply`}
@@ -474,35 +475,31 @@ export default function JobDetails() {
                 </div>
 
                 <div className="bg-primary/5 rounded-[2rem] p-6 border border-primary/10">
-                  <h4 className="text-sm font-black uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
-                    <ListChecks className="w-4 h-4" /> How to Apply Correctly
+                    <h4 className="text-sm font-black uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
+                    <ListChecks className="w-4 h-4" /> Official Application Checklist
                   </h4>
-                  <div className="space-y-3">
-                    {steps.length > 0 ? steps.map((step, i) => (
-                      <div key={i} className="flex gap-4">
-                        <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-black shrink-0">
-                          {i + 1}
-                        </div>
-                        <p className="text-sm text-foreground font-medium leading-relaxed">
-                          {step.replace(/^Step \d+:\s*/i, "")}
-                        </p>
+                  <div className="space-y-4">
+                    <div className="flex gap-4 p-3 bg-white/50 rounded-xl border border-primary/5">
+                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black shrink-0">1</div>
+                      <div>
+                        <p className="text-sm text-foreground font-bold">Verify Job Details</p>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">Ensure you are applying for <span className="font-bold text-primary">{job.title}</span>.</p>
                       </div>
-                    )) : (
-                      <>
-                        <div className="flex gap-4">
-                          <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-black shrink-0">1</div>
-                          <p className="text-sm text-foreground font-medium leading-relaxed">Click the button below to open the official career portal.</p>
-                        </div>
-                        <div className="flex gap-4">
-                          <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-black shrink-0">2</div>
-                          <p className="text-sm text-foreground font-medium leading-relaxed">Locate the search or "Job ID" section and enter the details if required.</p>
-                        </div>
-                        <div className="flex gap-4">
-                          <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-[10px] font-black shrink-0">3</div>
-                          <p className="text-sm text-foreground font-medium leading-relaxed">Complete the application form and upload your updated resume.</p>
-                        </div>
-                      </>
-                    )}
+                    </div>
+                    <div className="flex gap-4 p-3 bg-white/50 rounded-xl border border-primary/5">
+                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black shrink-0">2</div>
+                      <div>
+                        <p className="text-sm text-foreground font-bold">Official Site Verification</p>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">This link leads to the <span className="font-bold text-emerald-600">verified career portal</span> of {job.company}.</p>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 p-3 bg-white/50 rounded-xl border border-primary/5">
+                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black shrink-0">3</div>
+                      <div>
+                        <p className="text-sm text-foreground font-bold">Reference Number</p>
+                        <p className="text-[11px] text-muted-foreground leading-relaxed">Use Reference ID <span className="font-mono font-bold bg-secondary px-1.5 py-0.5 rounded text-primary">OPP-{jobId.toString().padStart(4, '0')}</span> if asked.</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -530,15 +527,30 @@ export default function JobDetails() {
                 </div>
 
                 <div className="pt-4 flex flex-col gap-3">
-                  <a 
-                    href={`${externalApplyUrl}${externalApplyUrl.includes('?') ? '&' : '?'}jobId=${jobId}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    onClick={() => setShowRedirectModal(false)}
-                    className="w-full py-4 bg-primary text-white rounded-2xl font-black text-center shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                  <button 
+                    disabled={isRedirecting}
+                    onClick={async () => {
+                      if (user) {
+                        setIsRedirecting(true);
+                        try {
+                          await fetch("/api/applications/track", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ jobId, applicantName: user.name, applicantEmail: user.email }),
+                          });
+                        } catch (error) {
+                          console.error("Failed to track application redirect", error);
+                        }
+                        setIsRedirecting(false);
+                      }
+                      window.open(externalApplyUrl, "_blank");
+                      setShowRedirectModal(false);
+                      setHasApplied(true);
+                    }}
+                    className="w-full py-4 bg-primary text-white rounded-2xl font-black text-center shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
                   >
-                    Go to Company Career Portal <ExternalLink className="w-5 h-5" />
-                  </a>
+                    {isRedirecting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Go to Company Career Portal"} <ExternalLink className="w-5 h-5" />
+                  </button>
                   <p className="text-[10px] text-center text-muted-foreground">
                     You are now leaving OpportuNet to apply on the official company website.
                   </p>
