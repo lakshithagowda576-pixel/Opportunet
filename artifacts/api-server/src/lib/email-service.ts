@@ -380,49 +380,95 @@ export async function sendApplicationConfirmationEmail(applicationId: number) {
     const [application] = await db
       .select({
         id: applicationsTable.id,
+        examId: applicationsTable.examId,
+        course: applicationsTable.course,
         applicantEmail: applicationsTable.applicantEmail,
         applicantName: applicationsTable.applicantName,
         jobTitle: jobsTable.title,
         company: jobsTable.company,
+        examName: examsTable.name,
       })
       .from(applicationsTable)
       .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id))
+      .leftJoin(examsTable, eq(applicationsTable.examId, examsTable.id))
       .where(eq(applicationsTable.id, applicationId));
 
     if (!application) return;
+
+    const isExam = !!application.examId;
+    const title = isExam ? `Registration Confirmation: ${application.examName}` : `Application Submitted: ${application.jobTitle}`;
+    const entityName = isExam ? application.examName : application.company;
+    
+    // Company specific text logic
+    let specificText = "";
+    if (!isExam) {
+      const company = (application.company || "").toLowerCase();
+      if (company.includes("accenture")) {
+        specificText = "Accenture values your interest. Our recruitment team will review your profile against our high standards of innovation and excellence.";
+      } else if (company.includes("tcs") || company.includes("tata")) {
+        specificText = "Thank you for choosing TCS. We are committed to building a digital future together.";
+      } else if (company.includes("google")) {
+        specificText = "Your application is being processed. We look for individuals who bring diverse perspectives and a passion for solving complex problems.";
+      } else {
+        specificText = `Thank you for your interest in joining ${application.company}. We have received your application and will be in touch shortly.`;
+      }
+    } else {
+      specificText = `You have successfully registered for the ${application.examName} for the course: <strong>${application.course || "General"}</strong>. Please keep your application number safe for future reference.`;
+    }
 
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
-            .content { background: white; padding: 30px; margin-top: 20px; border-radius: 8px; }
-            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .id-box { margin: 30px 0; padding: 20px; background: #f0f9ff; border-left: 4px solid #4f46e5; border-radius: 8px; text-align: center; }
+            .id-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 5px; }
+            .id-value { font-size: 28px; color: #1e1b4b; font-weight: 900; font-family: monospace; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+            .btn { display: inline-block; padding: 12px 24px; background: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>Application Submitted</h1>
+              <h1>${isExam ? "Exam Registration" : "Application Received"}</h1>
             </div>
             <div class="content">
-              <p>Hi ${application.applicantName},</p>
-              <p>We have successfully received your application for the following position:</p>
-              <h2 style="margin: 10px 0; color: #667eea;">${application.jobTitle}</h2>
-              <p style="color: #666; margin: 0;">at <strong>${application.company}</strong></p>
-              <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
-                <p style="margin: 0; color: #1e3a8a; font-size: 16px;">
-                  <strong>Your Application ID:</strong> ${application.id}
-                </p>
+              <p>Hi <strong>${application.applicantName}</strong>,</p>
+              <p>Success! We've received your ${isExam ? "registration" : "application"} for:</p>
+              <h2 style="color: #4f46e5; margin: 10px 0;">${isExam ? application.examName : application.jobTitle}</h2>
+              ${!isExam ? `<p style="color: #64748b; font-weight: 700;">@ ${application.company}</p>` : ""}
+              
+              <div class="id-box">
+                <p class="id-label">${isExam ? "Application Number" : "Tracking ID"}</p>
+                <p class="id-value">#${application.id.toString().padStart(6, "0")}</p>
+                ${isExam ? `<p style="margin-top: 10px; font-size: 14px; font-weight: 700; color: #4f46e5;">Course: ${application.course}</p>` : ""}
               </div>
-              <p style="margin-top: 20px;">You can track your application status anytime from your <strong>My Applications</strong> dashboard.</p>
-              <p style="margin-top: 30px;">Best regards,<br/><strong>OpportuNet Team</strong></p>
+
+              <p style="background: #f8fafc; padding: 20px; border-radius: 8px; font-style: italic; color: #475569; border: 1px solid #e2e8f0;">
+                "${specificText}"
+              </p>
+
+              <p style="margin-top: 30px;">
+                You can track the status of your ${isExam ? "registration" : "application"} directly from your OpportuNet dashboard.
+              </p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/applications" class="btn">View My Dashboard</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; pt-20; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
             </div>
             <div class="footer">
-              <p>© 2026 OpportuNet. All rights reserved.</p>
+              <p>© 2026 OpportuNet Portal. Empowering Careers in Karnataka.</p>
             </div>
           </div>
         </body>
@@ -434,12 +480,12 @@ export async function sendApplicationConfirmationEmail(applicationId: number) {
       await transporter.sendMail({
         from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
         to: application.applicantEmail,
-        subject: `Application Submitted Successfully - ${application.jobTitle}`,
+        subject: `${title} - ID: #${application.id.toString().padStart(6, "0")}`,
         html,
       });
       console.log(`Confirmation email sent to ${application.applicantEmail}`);
     } else {
-      console.log(`[SIMULATED EMAIL] Confirmation email would be sent to ${application.applicantEmail}`);
+      console.log(`[SIMULATED EMAIL] Confirmation email for ${isExam ? "Exam" : "Job"} would be sent to ${application.applicantEmail}`);
     }
   } catch (error) {
     console.error(`Failed to send confirmation email for application ${applicationId}:`, error);

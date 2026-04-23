@@ -5,6 +5,7 @@ import { Job, JobCategory } from "@workspace/api-client-react";
 import { formatDate, cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { PreRegisterForm } from "./PreRegisterForm";
 
 interface JobCardProps {
   job: Job;
@@ -15,6 +16,7 @@ import { motion } from "framer-motion";
 
 export function JobCard({ job, applicantCount }: JobCardProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showPreRegister, setShowPreRegister] = useState(false);
   const externalApplyUrl = job.official_url || job.applicationLink;
   const hasExternalApply = !!externalApplyUrl && externalApplyUrl.startsWith("http");
   
@@ -79,12 +81,9 @@ export function JobCard({ job, applicantCount }: JobCardProps) {
 
   return (
     <motion.div 
-      whileHover={{ y: -4, scale: 1.01 }}
-      className="group bg-white dark:bg-slate-900 rounded-[2rem] p-7 border border-border/50 shadow-[0_8px_30px_rgb(0,0,0,0.02)] hover:shadow-[0_20px_50px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition-all duration-500 flex flex-col h-full relative overflow-hidden"
+      whileHover={{ y: -2, scale: 1.005 }}
+      className="group bg-white dark:bg-slate-900 rounded-3xl p-5 border border-border/50 hover:border-primary/20 shadow-sm transition-all duration-300 flex flex-col h-full relative"
     >
-      <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity rotate-12 group-hover:rotate-0 duration-700">
-        <Briefcase className="w-24 h-24" />
-      </div>
 
       <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
@@ -113,75 +112,40 @@ export function JobCard({ job, applicantCount }: JobCardProps) {
           {job.description}
         </p>
 
-        {/* Details grid */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-secondary/30 border border-border/20">
-            <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
-              <MapPin className="w-4 h-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Location</p>
-              <p className="text-xs font-bold text-foreground truncate">{job.location}</p>
-            </div>
+        {/* Details row */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/50 text-[10px] font-bold text-muted-foreground">
+            <MapPin className="w-3 h-3" /> {job.location}
           </div>
-          <div className="flex items-center gap-3 p-3 rounded-2xl bg-secondary/30 border border-border/20">
-            <div className="w-8 h-8 rounded-xl bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
-              <Clock className="w-4 h-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-tighter text-muted-foreground">Shift</p>
-              <p className="text-xs font-bold text-foreground truncate">{getShiftLabel(job.shift)}</p>
-            </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/50 text-[10px] font-bold text-muted-foreground">
+            <Clock className="w-3 h-3" /> {getShiftLabel(job.shift)}
           </div>
-          <div className="col-span-2 flex items-center gap-4 p-4 rounded-2xl bg-primary/5 border border-primary/10">
-            <div className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/20">
-              <IndianRupee className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-widest text-primary/70">Estimated Package</p>
-              <p className="text-lg font-black text-foreground">{job.salary}</p>
-            </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-[10px] font-black text-primary">
+            <IndianRupee className="w-3 h-3" /> {job.salary}
           </div>
         </div>
 
-        {/* Footer Actions */}
-        <div className="mt-auto pt-6 border-t border-border/50 flex items-center gap-3">
+        <div className="mt-auto pt-4 border-t border-border/50 flex items-center gap-2">
           <button
             onClick={() => setShowDetails(true)}
-            className="p-3 rounded-2xl bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-border/50"
+            className="p-2.5 rounded-xl bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all"
           >
-            <Eye className="w-5 h-5" />
+            <Eye className="w-4 h-4" />
           </button>
-
-          {hasExternalApply ? (
-            <a
-              href={externalApplyUrl}
-              target="_blank"
-              rel="noreferrer"
+ 
+            <button
+              onClick={() => isFuture ? setShowPreRegister(true) : window.open(externalApplyUrl, "_blank")}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-black transition-all group/btn shadow-xl",
+                "flex-1 inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all group/btn",
                 isClosed
                   ? "bg-muted text-muted-foreground cursor-not-allowed"
-                  : "bg-primary text-white hover:bg-primary/90 shadow-primary/20 hover:scale-[1.02] active:scale-95"
+                  : "bg-primary text-white hover:bg-primary/90 hover:scale-[1.01]"
               )}
+              disabled={isClosed}
             >
-              {isClosed ? "Closed" : isFuture ? "Register Interest" : "Quick Apply"}
-              {!isClosed && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />}
-            </a>
-          ) : (
-            <Link
-              href={`/jobs/${job.id}/apply`}
-              className={cn(
-                "flex-1 inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl text-sm font-black transition-all group/btn shadow-xl",
-                isClosed
-                  ? "bg-muted text-muted-foreground cursor-not-allowed"
-                  : "bg-primary text-white hover:bg-primary/90 shadow-primary/20 hover:scale-[1.02] active:scale-95"
-              )}
-            >
-              {isClosed ? "Closed" : isFuture ? "Register Interest" : "Quick Apply"}
-              {!isClosed && <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />}
-            </Link>
-          )}
+              {isClosed ? "Closed" : isFuture ? "Pre-Register" : "Apply Now"}
+              {!isClosed && <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />}
+            </button>
         </div>
       </div>
 
@@ -368,39 +332,33 @@ export function JobCard({ job, applicantCount }: JobCardProps) {
               </div>
             </div>
 
-            {/* Apply Button in Modal */}
             <div className="pt-4 border-t border-border">
-              {hasExternalApply ? (
-                <a
-                  href={externalApplyUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={cn(
-                    "w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-base font-bold transition-all shadow-lg",
-                    isClosed
-                      ? "bg-muted text-muted-foreground cursor-not-allowed"
-                      : "bg-primary text-white hover:bg-primary/90 shadow-primary/30 hover:-translate-y-0.5"
-                  )}
-                >
-                  {isClosed ? "Application Closed" : isFuture ? "Pre-Register Now" : "Apply Now"}
-                  <ChevronRight className="w-5 h-5" />
-                </a>
-              ) : (
-                <Link
-                  href={`/jobs/${job.id}/apply`}
-                  className={cn(
-                    "w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-base font-bold transition-all shadow-lg",
-                    isClosed
-                      ? "bg-muted text-muted-foreground cursor-not-allowed"
-                      : "bg-primary text-white hover:bg-primary/90 shadow-primary/30 hover:-translate-y-0.5"
-                  )}
-                >
-                  {isClosed ? "Application Closed" : isFuture ? "Pre-Register Now" : "Apply Now"}
-                  <ChevronRight className="w-5 h-5" />
-                </Link>
-              )}
+              <button
+                onClick={() => isFuture ? (setShowDetails(false), setShowPreRegister(true)) : (hasExternalApply ? window.open(externalApplyUrl, "_blank") : null)}
+                className={cn(
+                  "w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-base font-bold transition-all shadow-lg",
+                  isClosed
+                    ? "bg-muted text-muted-foreground cursor-not-allowed"
+                    : "bg-primary text-white hover:bg-primary/90 shadow-primary/30 hover:-translate-y-0.5"
+                )}
+                disabled={isClosed}
+              >
+                {isClosed ? "Application Closed" : isFuture ? "Pre-Register Now" : "Apply Now"}
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+      {/* Pre-Register Dialog */}
+      <Dialog open={showPreRegister} onOpenChange={setShowPreRegister}>
+        <DialogContent className="max-w-md rounded-[2.5rem] p-8">
+          <PreRegisterForm 
+            jobTitle={job.title}
+            company={job.company}
+            onClose={() => setShowPreRegister(false)}
+            onSuccess={() => setShowPreRegister(false)}
+          />
         </DialogContent>
       </Dialog>
     </motion.div>

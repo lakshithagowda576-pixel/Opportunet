@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpportuNet | Simple Job Portal</title>
+    <meta name="description" content="Find your dream UI/UX design role at Accenture with OpportuNet's interactive portal.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="app-container">
+        <header class="hero">
+            <h1 id="main-title">OpportuNet <span class="accent">Lite</span></h1>
+            <p class="subtitle">Find precise opportunities with zero friction.</p>
+        </header>
+
+        <section class="search-card" id="search-card">
+            <div class="input-group">
+                <label for="role-select">Role</label>
+                <div class="custom-select-wrapper">
+                    <select id="role-select">
+                        <option value="" disabled selected>Select Role</option>
+                        <option value="uiux">UI/UX Designer</option>
+                        <option value="frontend">Frontend Developer</option>
+                        <option value="backend">Backend Developer</option>
+                        <option value="data">Data Scientist</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="company-select">Company</label>
+                <div class="custom-select-wrapper">
+                    <select id="company-select">
+                        <option value="" disabled selected>Select Company</option>
+                        <option value="accenture">Accenture</option>
+                        <option value="google">Google</option>
+                        <option value="microsoft">Microsoft</option>
+                        <option value="amazon">Amazon</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="result-container" class="result-container hidden">
+                <div class="job-card">
+                    <div class="job-header">
+                        <div class="match-badge">Direct Match</div>
+                        <img id="company-logo" src="https://logo.clearbit.com/accenture.com" alt="Company Logo" class="logo">
+                        <div class="job-info">
+                            <h3 id="job-title">UI/UX Designer</h3>
+                            <p id="company-name">Accenture</p>
+                        </div>
+                    </div>
+                    <div class="job-details">
+                        <span class="tag">Remote</span>
+                        <span class="tag">Full-time</span>
+                    </div>
+                    <a href="https://www.accenture.com/in-en/careers" target="_blank" class="apply-btn" id="job-link">
+                        Open Job Link
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                    </a>
+                </div>
+            </div>
+
+            <div id="empty-state" class="empty-state">
+                <p>Select role and company to see available links.</p>
+            </div>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>

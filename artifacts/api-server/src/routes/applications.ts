@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
-import { applicationsTable, jobsTable, usersTable } from "@workspace/db/schema";
+import { applicationsTable, jobsTable, usersTable, examsTable } from "@workspace/db/schema";
 import { and, eq, sql, desc } from "drizzle-orm";
 import {
   CreateApplicationBody,
@@ -38,14 +38,18 @@ router.get("/applications", async (req, res) => {
     .select({
       id: applicationsTable.id,
       jobId: applicationsTable.jobId,
+      examId: applicationsTable.examId,
+      course: applicationsTable.course,
       applicantName: applicationsTable.applicantName,
       applicantEmail: applicationsTable.applicantEmail,
       status: applicationsTable.status,
       appliedAt: applicationsTable.appliedAt,
       job: jobsTable,
+      examName: examsTable.name,
     })
     .from(applicationsTable)
-    .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)) as any;
+    .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id))
+    .leftJoin(examsTable, eq(applicationsTable.examId, examsTable.id)) as any;
 
   // Apply filtering based on conditions
   if (jobId) {
@@ -72,42 +76,47 @@ router.post("/applications", async (req, res) => {
     return;
   }
 
-  const body = CreateApplicationBody.parse(req.body);
+  const { jobId, examId, course, applicantName, applicantEmail, applicantPhone, applicantAddress, education, qualification, resumeUrl, acceptedTerms, coverLetter } = req.body;
 
+  // Check if already applied
   const [existing] = await db
     .select()
     .from(applicationsTable)
     .where(
       and(
-        eq(applicationsTable.jobId, body.jobId),
-        eq(applicationsTable.applicantEmail, user.email || body.applicantEmail)
+        jobId ? eq(applicationsTable.jobId, jobId) : eq(applicationsTable.examId, examId!),
+        eq(applicationsTable.applicantEmail, user.email || applicantEmail)
       )
     );
 
   if (existing) {
-    res.status(400).json({ error: "You have already applied for this job." });
+    res.status(400).json({ error: "You have already applied for this." });
     return;
   }
 
   const [app] = await db
     .insert(applicationsTable)
     .values({
-      jobId: body.jobId,
+      jobId,
+      examId,
+      course,
       userId: user.id,
-      applicantName: user.name || body.applicantName,
-      applicantEmail: user.email || body.applicantEmail,
-      applicantPhone: body.applicantPhone,
-      applicantAddress: body.applicantAddress,
-      education: body.education,
-      qualification: body.qualification,
-      resumeUrl: body.resumeUrl,
-      acceptedTerms: body.acceptedTerms,
-      coverLetter: body.coverLetter,
+      applicantName: user.name || applicantName,
+      applicantEmail: user.email || applicantEmail,
+      applicantPhone,
+      applicantAddress,
+      education,
+      qualification,
+      resumeUrl,
+      acceptedTerms,
+      coverLetter,
     })
     .returning();
 
-  res.status(201).json({ ...app, appliedAt: app.appliedAt.toISOString() });
+  const formattedApp = { ...app, appliedAt: app.appliedAt.toISOString() };
+  res.status(201).json(formattedApp);
 
+  // Send the specific email based on type
   sendApplicationConfirmationEmail(app.id);
 });
 

@@ -137,32 +137,43 @@ export default function ApplicationTracker() {
                     {getStatusIcon(selectedApplication?.status)} {selectedApplication?.status}
                   </span>
                   <span className="text-sm text-muted-foreground">
-                    Applied {selectedApplication ? format(new Date(selectedApplication.appliedAt), 'MMM dd, yyyy') : "-"}
+                    {selectedApplication?.examId ? "Registered" : "Applied"} {selectedApplication ? format(new Date(selectedApplication.appliedAt), 'MMM dd, yyyy') : "-"}
                   </span>
                 </div>
-                <h3 className="text-3xl font-bold text-foreground">{selectedApplication?.job?.title || "Application Details"}</h3>
+                <h3 className="text-3xl font-bold text-foreground">
+                  {selectedApplication?.examId ? selectedApplication?.examName : selectedApplication?.job?.title || "Application Details"}
+                </h3>
                 <p className="text-muted-foreground flex items-center gap-2 mt-2">
-                  <Building2 className="w-4 h-4" /> {selectedApplication?.job?.company || "Company"}
+                  {selectedApplication?.examId ? <GraduationCap className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
+                  {selectedApplication?.examId ? "Karnataka Examinations Authority" : selectedApplication?.job?.company || "Company"}
                 </p>
               </div>
               <div className="space-y-3">
-                <Link href={`/jobs/${selectedApplication?.jobId}`} className="inline-flex px-5 py-3 rounded-2xl bg-primary text-white font-semibold hover:bg-primary/90 transition-all">
-                  View Job Posting
-                </Link>
+                {selectedApplication?.jobId && (
+                  <Link href={`/jobs/${selectedApplication?.jobId}`} className="inline-flex px-5 py-3 rounded-2xl bg-primary text-white font-semibold hover:bg-primary/90 transition-all">
+                    View Job Posting
+                  </Link>
+                )}
                 <button onClick={() => navigate('/jobs')} className="inline-flex px-5 py-3 rounded-2xl bg-secondary text-secondary-foreground font-semibold hover:bg-secondary/90 transition-all">
-                  Browse More Jobs
+                  Browse More {selectedApplication?.examId ? "Exams" : "Jobs"}
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
               <div className="bg-secondary/10 rounded-2xl p-5">
-                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Application ID</p>
-                <p className="text-lg font-bold">{selectedApplication?.id?.toString().padStart(6, '0')}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">
+                  {selectedApplication?.examId ? "Application Number" : "Tracking ID"}
+                </p>
+                <p className="text-lg font-bold">#{(selectedApplication?.id || 0).toString().padStart(6, '0')}</p>
               </div>
               <div className="bg-secondary/10 rounded-2xl p-5">
-                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Phone</p>
-                <p className="font-semibold">{selectedApplication?.applicantPhone || 'Not provided'}</p>
+                <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">
+                  {selectedApplication?.examId ? "Course Selected" : "Phone"}
+                </p>
+                <p className="font-semibold">
+                  {selectedApplication?.examId ? selectedApplication?.course : selectedApplication?.applicantPhone || 'Not provided'}
+                </p>
               </div>
               <div className="bg-secondary/10 rounded-2xl p-5">
                 <p className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-2">Location</p>

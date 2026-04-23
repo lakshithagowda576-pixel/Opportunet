@@ -1,7 +1,7 @@
 import { db } from "@workspace/db";
 import { collegesTable, collegeCutoffsTable, collegeFeesTable } from "@workspace/db/schema";
 import { karnatakaColeges } from "../data/karnataka-colleges";
-import { logger } from "../index";
+import { logger } from "./logger";
 
 export async function seedColleges() {
   try {

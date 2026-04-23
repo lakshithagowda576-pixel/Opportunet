@@ -48457,7 +48457,7 @@ __export(schema_exports, {
   collegeFeesTable: () => collegeFeesTable,
   collegesTable: () => collegesTable,
   examResultsTable: () => examResultsTable,
-  examsTable: () => examsTable,
+  examsTable: () => examsTable2,
   hrEmailsTable: () => hrEmailsTable,
   insertApplicationSchema: () => insertApplicationSchema,
   insertCollegeCutoffSchema: () => insertCollegeCutoffSchema,
@@ -59907,6 +59907,40 @@ var usersTable = pgTable("users", {
 });
 var insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
 
+// ../../lib/db/src/schema/exams.ts
+var studyMaterialTypeEnum = pgEnum("study_material_type", [
+  "PDF",
+  "Video",
+  "Notes",
+  "Practice_Test"
+]);
+var examsTable2 = pgTable("exams", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  fullName: text("full_name").notNull(),
+  description: text("description").notNull(),
+  examDate: text("exam_date").notNull(),
+  applicationStartDate: text("application_start_date").notNull(),
+  applicationEndDate: text("application_end_date").notNull(),
+  applyLink: text("apply_link").notNull(),
+  eligibility: text("eligibility").notNull(),
+  applicationGuide: text("application_guide").notNull(),
+  officialWebsite: text("official_website").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+var studyMaterialsTable = pgTable("study_materials", {
+  id: serial("id").primaryKey(),
+  examId: integer("exam_id").notNull().references(() => examsTable2.id),
+  title: text("title").notNull(),
+  subject: text("subject").notNull(),
+  type: studyMaterialTypeEnum("type").notNull(),
+  description: text("description").notNull(),
+  url: text("url").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull()
+});
+var insertExamSchema = createInsertSchema(examsTable2).omit({ id: true, createdAt: true });
+var insertStudyMaterialSchema = createInsertSchema(studyMaterialsTable).omit({ id: true, createdAt: true });
+
 // ../../lib/db/src/schema/applications.ts
 var applicationStatusEnum = pgEnum("application_status", [
   "Pending",
@@ -59917,7 +59951,8 @@ var applicationStatusEnum = pgEnum("application_status", [
 ]);
 var applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
-  jobId: integer("job_id").notNull().references(() => jobsTable.id),
+  jobId: integer("job_id").references(() => jobsTable.id),
+  examId: integer("exam_id").references(() => examsTable2.id),
   userId: integer("user_id").references(() => usersTable.id),
   applicantName: text("applicant_name").notNull(),
   applicantEmail: text("applicant_email").notNull(),
@@ -59928,6 +59963,8 @@ var applicationsTable = pgTable("applications", {
   resumeUrl: text("resume_url"),
   acceptedTerms: boolean("accepted_terms").notNull().default(false),
   coverLetter: text("cover_letter"),
+  course: text("course"),
+  // For PGCET (MBA, MCA, M.Tech)
   status: applicationStatusEnum("status").notNull().default("Pending"),
   appliedAt: timestamp("applied_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
@@ -59955,40 +59992,6 @@ var insertMessageSchema = createInsertSchema(messagesTable).omit({
   sentAt: true,
   isReply: true
 });
-
-// ../../lib/db/src/schema/exams.ts
-var studyMaterialTypeEnum = pgEnum("study_material_type", [
-  "PDF",
-  "Video",
-  "Notes",
-  "Practice_Test"
-]);
-var examsTable = pgTable("exams", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  fullName: text("full_name").notNull(),
-  description: text("description").notNull(),
-  examDate: text("exam_date").notNull(),
-  applicationStartDate: text("application_start_date").notNull(),
-  applicationEndDate: text("application_end_date").notNull(),
-  applyLink: text("apply_link").notNull(),
-  eligibility: text("eligibility").notNull(),
-  applicationGuide: text("application_guide").notNull(),
-  officialWebsite: text("official_website").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-});
-var studyMaterialsTable = pgTable("study_materials", {
-  id: serial("id").primaryKey(),
-  examId: integer("exam_id").notNull().references(() => examsTable.id),
-  title: text("title").notNull(),
-  subject: text("subject").notNull(),
-  type: studyMaterialTypeEnum("type").notNull(),
-  description: text("description").notNull(),
-  url: text("url").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull()
-});
-var insertExamSchema = createInsertSchema(examsTable).omit({ id: true, createdAt: true });
-var insertStudyMaterialSchema = createInsertSchema(studyMaterialsTable).omit({ id: true, createdAt: true });
 
 // ../../lib/db/src/schema/hr-emails.ts
 var hrEmailsTable = pgTable("hr_emails", {
@@ -60052,7 +60055,7 @@ var collegeFeesTable = pgTable("college_fees", {
 var examResultsTable = pgTable("exam_results", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
-  examId: integer("exam_id").notNull().references(() => examsTable.id),
+  examId: integer("exam_id").notNull().references(() => examsTable2.id),
   score: integer("score").notNull(),
   totalMarks: integer("total_marks").default(600),
   percentile: varchar("percentile", { length: 10 }),
@@ -60478,44 +60481,86 @@ async function sendApplicationConfirmationEmail(applicationId) {
   try {
     const [application] = await db.select({
       id: applicationsTable.id,
+      examId: applicationsTable.examId,
+      course: applicationsTable.course,
       applicantEmail: applicationsTable.applicantEmail,
       applicantName: applicationsTable.applicantName,
       jobTitle: jobsTable.title,
-      company: jobsTable.company
-    }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).where(eq(applicationsTable.id, applicationId));
+      company: jobsTable.company,
+      examName: examsTable.name
+    }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).leftJoin(examsTable, eq(applicationsTable.examId, examsTable.id)).where(eq(applicationsTable.id, applicationId));
     if (!application) return;
+    const isExam = !!application.examId;
+    const title = isExam ? `Registration Confirmation: ${application.examName}` : `Application Submitted: ${application.jobTitle}`;
+    const entityName = isExam ? application.examName : application.company;
+    let specificText = "";
+    if (!isExam) {
+      const company = (application.company || "").toLowerCase();
+      if (company.includes("accenture")) {
+        specificText = "Accenture values your interest. Our recruitment team will review your profile against our high standards of innovation and excellence.";
+      } else if (company.includes("tcs") || company.includes("tata")) {
+        specificText = "Thank you for choosing TCS. We are committed to building a digital future together.";
+      } else if (company.includes("google")) {
+        specificText = "Your application is being processed. We look for individuals who bring diverse perspectives and a passion for solving complex problems.";
+      } else {
+        specificText = `Thank you for your interest in joining ${application.company}. We have received your application and will be in touch shortly.`;
+      }
+    } else {
+      specificText = `You have successfully registered for the ${application.examName} for the course: <strong>${application.course || "General"}</strong>. Please keep your application number safe for future reference.`;
+    }
     const html = `
       <!DOCTYPE html>
       <html>
         <head>
           <style>
-            body { font-family: Arial, sans-serif; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; }
-            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; }
-            .content { background: white; padding: 30px; margin-top: 20px; border-radius: 8px; }
-            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; font-size: 12px; color: #666; text-align: center; }
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .id-box { margin: 30px 0; padding: 20px; background: #f0f9ff; border-left: 4px solid #4f46e5; border-radius: 8px; text-align: center; }
+            .id-label { font-size: 12px; color: #64748b; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 700; margin-bottom: 5px; }
+            .id-value { font-size: 28px; color: #1e1b4b; font-weight: 900; font-family: monospace; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+            .btn { display: inline-block; padding: 12px 24px; background: #4f46e5; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1>Application Submitted</h1>
+              <h1>${isExam ? "Exam Registration" : "Application Received"}</h1>
             </div>
             <div class="content">
-              <p>Hi ${application.applicantName},</p>
-              <p>We have successfully received your application for the following position:</p>
-              <h2 style="margin: 10px 0; color: #667eea;">${application.jobTitle}</h2>
-              <p style="color: #666; margin: 0;">at <strong>${application.company}</strong></p>
-              <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-left: 4px solid #667eea; border-radius: 4px;">
-                <p style="margin: 0; color: #1e3a8a; font-size: 16px;">
-                  <strong>Your Application ID:</strong> ${application.id}
-                </p>
+              <p>Hi <strong>${application.applicantName}</strong>,</p>
+              <p>Success! We've received your ${isExam ? "registration" : "application"} for:</p>
+              <h2 style="color: #4f46e5; margin: 10px 0;">${isExam ? application.examName : application.jobTitle}</h2>
+              ${!isExam ? `<p style="color: #64748b; font-weight: 700;">@ ${application.company}</p>` : ""}
+              
+              <div class="id-box">
+                <p class="id-label">${isExam ? "Application Number" : "Tracking ID"}</p>
+                <p class="id-value">#${application.id.toString().padStart(6, "0")}</p>
+                ${isExam ? `<p style="margin-top: 10px; font-size: 14px; font-weight: 700; color: #4f46e5;">Course: ${application.course}</p>` : ""}
               </div>
-              <p style="margin-top: 20px;">You can track your application status anytime from your <strong>My Applications</strong> dashboard.</p>
-              <p style="margin-top: 30px;">Best regards,<br/><strong>OpportuNet Team</strong></p>
+
+              <p style="background: #f8fafc; padding: 20px; border-radius: 8px; font-style: italic; color: #475569; border: 1px solid #e2e8f0;">
+                "${specificText}"
+              </p>
+
+              <p style="margin-top: 30px;">
+                You can track the status of your ${isExam ? "registration" : "application"} directly from your OpportuNet dashboard.
+              </p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/applications" class="btn">View My Dashboard</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; pt-20; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
             </div>
             <div class="footer">
-              <p>\xA9 2026 OpportuNet. All rights reserved.</p>
+              <p>\xA9 2026 OpportuNet Portal. Empowering Careers in Karnataka.</p>
             </div>
           </div>
         </body>
@@ -60526,12 +60571,12 @@ async function sendApplicationConfirmationEmail(applicationId) {
       await transporter2.sendMail({
         from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
         to: application.applicantEmail,
-        subject: `Application Submitted Successfully - ${application.jobTitle}`,
+        subject: `${title} - ID: #${application.id.toString().padStart(6, "0")}`,
         html
       });
       console.log(`Confirmation email sent to ${application.applicantEmail}`);
     } else {
-      console.log(`[SIMULATED EMAIL] Confirmation email would be sent to ${application.applicantEmail}`);
+      console.log(`[SIMULATED EMAIL] Confirmation email for ${isExam ? "Exam" : "Job"} would be sent to ${application.applicantEmail}`);
     }
   } catch (error40) {
     console.error(`Failed to send confirmation email for application ${applicationId}:`, error40);
@@ -60557,12 +60602,15 @@ router3.get("/applications", async (req, res) => {
   let baseQuery = db.select({
     id: applicationsTable.id,
     jobId: applicationsTable.jobId,
+    examId: applicationsTable.examId,
+    course: applicationsTable.course,
     applicantName: applicationsTable.applicantName,
     applicantEmail: applicationsTable.applicantEmail,
     status: applicationsTable.status,
     appliedAt: applicationsTable.appliedAt,
-    job: jobsTable
-  }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id));
+    job: jobsTable,
+    examName: examsTable2.name
+  }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).leftJoin(examsTable2, eq(applicationsTable.examId, examsTable2.id));
   if (jobId) {
     baseQuery = baseQuery.where(eq(applicationsTable.jobId, jobId));
   } else if (!isPrivileged) {
@@ -60582,31 +60630,34 @@ router3.post("/applications", async (req, res) => {
     res.status(401).json({ error: "Unauthorized. Please log in." });
     return;
   }
-  const body = CreateApplicationBody.parse(req.body);
+  const { jobId, examId, course, applicantName, applicantEmail, applicantPhone, applicantAddress, education, qualification, resumeUrl, acceptedTerms, coverLetter } = req.body;
   const [existing] = await db.select().from(applicationsTable).where(
     and(
-      eq(applicationsTable.jobId, body.jobId),
-      eq(applicationsTable.applicantEmail, user.email || body.applicantEmail)
+      jobId ? eq(applicationsTable.jobId, jobId) : eq(applicationsTable.examId, examId),
+      eq(applicationsTable.applicantEmail, user.email || applicantEmail)
     )
   );
   if (existing) {
-    res.status(400).json({ error: "You have already applied for this job." });
+    res.status(400).json({ error: "You have already applied for this." });
     return;
   }
   const [app2] = await db.insert(applicationsTable).values({
-    jobId: body.jobId,
+    jobId,
+    examId,
+    course,
     userId: user.id,
-    applicantName: user.name || body.applicantName,
-    applicantEmail: user.email || body.applicantEmail,
-    applicantPhone: body.applicantPhone,
-    applicantAddress: body.applicantAddress,
-    education: body.education,
-    qualification: body.qualification,
-    resumeUrl: body.resumeUrl,
-    acceptedTerms: body.acceptedTerms,
-    coverLetter: body.coverLetter
+    applicantName: user.name || applicantName,
+    applicantEmail: user.email || applicantEmail,
+    applicantPhone,
+    applicantAddress,
+    education,
+    qualification,
+    resumeUrl,
+    acceptedTerms,
+    coverLetter
   }).returning();
-  res.status(201).json({ ...app2, appliedAt: app2.appliedAt.toISOString() });
+  const formattedApp = { ...app2, appliedAt: app2.appliedAt.toISOString() };
+  res.status(201).json(formattedApp);
   sendApplicationConfirmationEmail(app2.id);
 });
 router3.patch("/applications/:id/status", async (req, res) => {
@@ -60717,13 +60768,13 @@ function normalizeExamRecord(exam) {
 // src/routes/exams.ts
 var router4 = (0, import_express4.Router)();
 router4.get("/exams", async (req, res) => {
-  const exams = await db.select().from(examsTable);
+  const exams = await db.select().from(examsTable2);
   const formatted = exams.map((e) => normalizeExamRecord(e));
   res.json(formatted);
 });
 router4.get("/exams/:id", async (req, res) => {
   const params = GetExamParams.parse({ id: parseInt(req.params.id) });
-  const [exam] = await db.select().from(examsTable).where(eq(examsTable.id, params.id));
+  const [exam] = await db.select().from(examsTable2).where(eq(examsTable2.id, params.id));
   if (!exam) {
     res.status(404).json({ error: "Exam not found" });
     return;
@@ -61396,9 +61447,9 @@ var IT_JOBS = [
   { title: "Senior Software Engineer", company: "Wipro Technologies", location: "Bangalore, Karnataka", salary: "\u20B918\u201328 LPA", openings: 12, applicationLink: "https://careers.wipro.com" },
   { title: "Cybersecurity Analyst", company: "Wipro Technologies", location: "Mumbai, Maharashtra", salary: "\u20B914\u201322 LPA", openings: 8, applicationLink: "https://careers.wipro.com" },
   { title: "Mobile App Developer", company: "Wipro Technologies", location: "Chennai, Tamil Nadu", salary: "\u20B910\u201316 LPA", openings: 15, applicationLink: "https://careers.wipro.com" },
-  { title: "UI/UX Designer", company: "Accenture India", location: "Bangalore, Karnataka", salary: "\u20B910\u201318 LPA", openings: 20, applicationLink: "https://www.accenture.com/in-en/careers" },
-  { title: "Java Backend Developer", company: "Accenture India", location: "Pune, Maharashtra", salary: "\u20B910\u201316 LPA", openings: 35, applicationLink: "https://www.accenture.com/in-en/careers" },
-  { title: "Power BI / Data Analyst", company: "Accenture India", location: "Chennai, Tamil Nadu", salary: "\u20B98\u201314 LPA", openings: 25, applicationLink: "https://www.accenture.com/in-en/careers" },
+  { title: "User Experience Designer", company: "Accenture India", location: "Bangalore, Karnataka", salary: "\u20B910\u201318 LPA", openings: 20, applicationLink: "https://mycareer.accenture.com?source=acn_5&JRID=ATCI-5057269-S1873357" },
+  { title: "Custom Software Engineer (Spring Boot)", company: "Accenture India", location: "Pune, Maharashtra", salary: "\u20B910\u201316 LPA", openings: 35, applicationLink: "https://www.accenture.com/in-en/careers/jobsearch?jk=Java%20Backend%20Developer&sb=0" },
+  { title: "Custom Software Engineer (Microsoft Power BI)", company: "Accenture India", location: "Chennai, Tamil Nadu", salary: "\u20B98\u201314 LPA", openings: 25, applicationLink: "https://www.accenture.com/in-en/careers/jobsearch?jk=Power%20BI%20Analyst&sb=0" },
   { title: "SAP ABAP Consultant", company: "IBM India", location: "Bangalore, Karnataka", salary: "\u20B916\u201328 LPA", openings: 7, applicationLink: "https://www.ibm.com/employment/in-en" },
   { title: "Cloud Security Engineer", company: "IBM India", location: "Hyderabad, Telangana", salary: "\u20B920\u201335 LPA", openings: 5, applicationLink: "https://www.ibm.com/employment/in-en" },
   { title: "Mainframe Developer", company: "IBM India", location: "Kolkata, West Bengal", salary: "\u20B912\u201320 LPA", openings: 8, applicationLink: "https://www.ibm.com/employment/in-en" },
@@ -61823,195 +61874,20 @@ var karnatakaColeges = [
     state: "Karnataka",
     collegeCode: "NITK",
     affiliation: "Deemed University",
-    about: "NITK is one of the premier engineering institutions in India, Known for high-quality technical education and research. It offers top-tier PG programs in various engineering disciplines.",
+    about: "NITK is one of the premier engineering institutions in India.",
     websiteUrl: "https://www.nitk.ac.in",
     contactEmail: "admissions@nitk.ac.in",
     contactPhone: "+91-824-2473000",
     establishedYear: 1957,
-    facilities: ["High-speed Wi-Fi", "Research Labs", "Library", "Hostels", "Sports Complex", "Auditorium"],
-    qualification: "B.E/B.Tech in relevant branch with 50% marks (45% for SC/ST)",
+    facilities: ["High-speed Wi-Fi", "Research Labs", "Library", "Hostels"],
+    qualification: "B.E/B.Tech with 50% marks",
     cutoffs: [
-      // ... (trimmed for brevity in thought, but I will apply to all)
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 480, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" },
-      { courseName: "MTech Electronics", category: "General", cutoffScore: 450, ugSeats: 0, pgSeats: 25, academicYear: "2024-25" },
-      { courseName: "MTech Mechanical", category: "General", cutoffScore: 440, ugSeats: 0, pgSeats: 28, academicYear: "2024-25" },
-      { courseName: "MTech Civil", category: "General", cutoffScore: 420, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" }
+      { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 480, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" },
+      { courseName: "M.Tech Electronics", category: "General", cutoffScore: 450, ugSeats: 0, pgSeats: 25, academicYear: "2024-25" },
+      { courseName: "M.Tech Civil Engineering", category: "General", cutoffScore: 420, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" }
     ],
     fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "200000", totalFees: "400000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Electronics", annualFees: "200000", totalFees: "400000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Mechanical", annualFees: "200000", totalFees: "400000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Civil", annualFees: "200000", totalFees: "400000", description: "2 year program", academicYear: "2024-25" }
-    ]
-  },
-  {
-    name: "Visvesvaraya National Institute of Technology (VNIT)",
-    location: "Nagpur Road, Nagpur",
-    city: "Bangalore",
-    state: "Karnataka",
-    collegeCode: "VNIT",
-    affiliation: "NIT System",
-    about: "VNIT is a premier National Institute of Technology located in Nagpur. It offers excellent MTech programs with industry collaborations and strong placements.",
-    websiteUrl: "https://vnit.ac.in",
-    contactEmail: "admissions@vnit.ac.in",
-    contactPhone: "+91-7122-801061",
-    establishedYear: 1960,
-    facilities: ["Smart Classrooms", "Digital Library", "Computing Center", "Workshop", "Cafeteria"],
-    qualification: "B.E/B.Tech with valid GATE score or PG-CET rank",
-    cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 470, ugSeats: 0, pgSeats: 35, academicYear: "2024-25" },
-      { courseName: "MTech Electrical", category: "General", cutoffScore: 460, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" },
-      { courseName: "MTech Mechanical", category: "General", cutoffScore: 450, ugSeats: 0, pgSeats: 32, academicYear: "2024-25" }
-    ],
-    fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "150000", totalFees: "300000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Electrical", annualFees: "150000", totalFees: "300000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Mechanical", annualFees: "150000", totalFees: "300000", description: "2 year program", academicYear: "2024-25" }
-    ]
-  },
-  {
-    name: "Indian Institute of Science (IISc)",
-    location: "Bangalore",
-    city: "Bangalore",
-    state: "Karnataka",
-    collegeCode: "IISc",
-    affiliation: "Deemed University",
-    about: "IISc Bangalore is India's premier research institution. Offers world-class MTech and PhD programs in various engineering and science disciplines.",
-    websiteUrl: "https://www.iisc.ac.in",
-    contactEmail: "admissions@iisc.ac.in",
-    contactPhone: "+91-80-22932550",
-    establishedYear: 1909,
-    facilities: ["Advanced Research Centers", "Multi-disciplinary Labs", "Historical Campus", "Global Connectivity"],
-    qualification: "First Class Bachelor's Degree in Engineering/Technology",
-    cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 520, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
-      { courseName: "MTech Electrical", category: "General", cutoffScore: 500, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
-      { courseName: "MTech Mechanical", category: "General", cutoffScore: 490, ugSeats: 0, pgSeats: 45, academicYear: "2024-25" },
-      { courseName: "ME Computational Science", category: "General", cutoffScore: 510, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" }
-    ],
-    fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "300000", totalFees: "600000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Electrical", annualFees: "300000", totalFees: "600000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Mechanical", annualFees: "300000", totalFees: "600000", description: "2 year program", academicYear: "2024-25" }
-    ]
-  },
-  {
-    name: "PES University",
-    location: "Bangalore",
-    city: "Bangalore",
-    state: "Karnataka",
-    collegeCode: "PESU",
-    affiliation: "Private University",
-    about: "PES University is a leading private university in Bangalore offering quality engineering and management education with strong placement records.",
-    websiteUrl: "https://pes.edu",
-    contactEmail: "admissions@pes.edu",
-    contactPhone: "+91-80-6614-2222",
-    establishedYear: 1972,
-    facilities: ["Industry Collaboration Labs", "Placements Cell", "Modern Gym", "Food Court"],
-    qualification: "Bachelor's degree with 50% aggregate marks",
-    cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 380, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
-      { courseName: "MTech Mechanical", category: "General", cutoffScore: 360, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" },
-      { courseName: "MTech Electronics", category: "General", cutoffScore: 370, ugSeats: 0, pgSeats: 35, academicYear: "2024-25" }
-    ],
-    fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "500000", totalFees: "1000000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Mechanical", annualFees: "500000", totalFees: "1000000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Electronics", annualFees: "500000", totalFees: "1000000", description: "2 year program", academicYear: "2024-25" }
-    ]
-  },
-  {
-    name: "Christ University",
-    location: "Bangalore",
-    city: "Bangalore",
-    state: "Karnataka",
-    collegeCode: "CHRIST",
-    affiliation: "Private University",
-    about: "Christ University is a leading institution offering quality education in engineering, management and other disciplines with excellent faculty and infrastructure.",
-    websiteUrl: "https://christuniversity.in",
-    contactEmail: "admissions@christuniversity.in",
-    contactPhone: "+91-80-4012-9000",
-    establishedYear: 1969,
-    facilities: ["Cultural Centers", "Holistic Development Hub", "Modern Libraries", "Green Campus"],
-    qualification: "Degree in relevant field from recognized university",
-    cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 350, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" },
-      { courseName: "MTech Mechanical", category: "General", cutoffScore: 330, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" }
-    ],
-    fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "450000", totalFees: "900000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Mechanical", annualFees: "450000", totalFees: "900000", description: "2 year program", academicYear: "2024-25" }
-    ]
-  },
-  {
-    name: "Dayananda Sagar University",
-    location: "Bangalore",
-    city: "Bangalore",
-    state: "Karnataka",
-    collegeCode: "DSU",
-    affiliation: "Private University",
-    about: "DSU is a private university offering engineering programs with modern infrastructure and experienced faculty. Good placement opportunities in IT sector.",
-    websiteUrl: "https://dsu.edu.in",
-    contactEmail: "admissions@dsu.edu.in",
-    contactPhone: "+91-80-6614-8888",
-    establishedYear: 1995,
-    cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 45, academicYear: "2024-25" },
-      { courseName: "MTech Electrical", category: "General", cutoffScore: 310, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" }
-    ],
-    fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "400000", totalFees: "800000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Electrical", annualFees: "400000", totalFees: "800000", description: "2 year program", academicYear: "2024-25" }
-    ]
-  },
-  {
-    name: "Visvesvaraya Technological University (VTU)",
-    location: "Belgaum",
-    city: "Belgaum",
-    state: "Karnataka",
-    collegeCode: "VTU",
-    affiliation: "State University",
-    about: "VTU is the state technological university of Karnataka. It's an academic university that offers MTech programs through its affiliated colleges across Karnataka.",
-    websiteUrl: "https://vtu.ac.in",
-    contactEmail: "admissions@vtu.ac.in",
-    contactPhone: "+91-831-2404000",
-    establishedYear: 1998,
-    facilities: ["Regional Centers", "Distance Learning Hub", "Technical Library", "Exam Centers"],
-    qualification: "Bachelor's Degree in Engineering / Technology",
-    cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 100, academicYear: "2024-25" },
-      { courseName: "MTech Mechanical", category: "General", cutoffScore: 290, ugSeats: 0, pgSeats: 80, academicYear: "2024-25" },
-      { courseName: "MTech Civil", category: "General", cutoffScore: 280, ugSeats: 0, pgSeats: 70, academicYear: "2024-25" }
-    ],
-    fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "80000", totalFees: "160000", description: "2 year program, Government College fees", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Mechanical", annualFees: "80000", totalFees: "160000", description: "2 year program, Government College fees", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Civil", annualFees: "80000", totalFees: "160000", description: "2 year program, Government College fees", academicYear: "2024-25" }
-    ]
-  },
-  {
-    name: "Ramaiah University",
-    location: "Bangalore",
-    city: "Bangalore",
-    state: "Karnataka",
-    collegeCode: "RU",
-    affiliation: "Private University",
-    about: "Ramaiah University is a private engineering university with modern laboratories, experienced faculty and active placement cell.",
-    websiteUrl: "https://mru.edu.in",
-    contactEmail: "admissions@mru.edu.in",
-    contactPhone: "+91-80-4109-0000",
-    establishedYear: 1995,
-    cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
-      { courseName: "MTech Mechanical", category: "General", cutoffScore: 330, ugSeats: 0, pgSeats: 45, academicYear: "2024-25" },
-      { courseName: "MBA Finance", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
-      { courseName: "MCA Data Science", category: "General", cutoffScore: 310, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
-    ],
-    fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "480000", totalFees: "960000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Mechanical", annualFees: "480000", totalFees: "960000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MBA Finance", annualFees: "350000", totalFees: "700000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MCA Data Science", annualFees: "300000", totalFees: "600000", description: "2 year program", academicYear: "2024-25" }
+      { courseType: "PG", courseName: "M.Tech", annualFees: "200000", totalFees: "400000", description: "2 year", academicYear: "2024-25" }
     ]
   },
   {
@@ -62021,22 +61897,69 @@ var karnatakaColeges = [
     state: "Karnataka",
     collegeCode: "RVCE",
     affiliation: "VTU Affiliated",
-    about: "RVCE is one of the most prestigious engineering colleges in Bangalore, known for its excellent MTech and MCA programs and industry-aligned curriculum.",
+    about: "RVCE is a top-tier engineering college in Bangalore.",
     websiteUrl: "https://rvce.edu.in",
     contactEmail: "admissions@rvce.edu.in",
     contactPhone: "+91-80-67178021",
     establishedYear: 1963,
-    facilities: ["Project Labs", "Technical Clubs", "Large Auditorium", "Excellent Placement Hub"],
-    qualification: "BE/BTech or equivalent with 50% marks",
+    facilities: ["Placement Hub", "Labs", "Library"],
+    qualification: "Bachelor's with 50%",
     cutoffs: [
-      { courseName: "MTech Computer Science", category: "General", cutoffScore: 495, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
-      { courseName: "MCA Cloud Computing", category: "General", cutoffScore: 460, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
-      { courseName: "MBA Marketing", category: "General", cutoffScore: 420, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+      { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 495, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 480, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 470, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "M.Tech Software Engineering", category: "General", cutoffScore: 460, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
     ],
     fees: [
-      { courseType: "PG", courseName: "MTech Computer Science", annualFees: "250000", totalFees: "500000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MCA Cloud Computing", annualFees: "200000", totalFees: "400000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MBA Marketing", annualFees: "200000", totalFees: "400000", description: "2 year program", academicYear: "2024-25" }
+      { courseType: "PG", courseName: "M.Tech", annualFees: "250000", totalFees: "500000", description: "2 year", academicYear: "2024-25" },
+      { courseType: "PG", courseName: "MCA", annualFees: "200000", totalFees: "400000", description: "2 year", academicYear: "2024-25" },
+      { courseType: "PG", courseName: "MBA", annualFees: "220000", totalFees: "440000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "PES University",
+    location: "Ring Road, Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "PESU",
+    affiliation: "Private University",
+    about: "PES University is a leading private university in Bangalore.",
+    websiteUrl: "https://pes.edu",
+    contactEmail: "admissions@pes.edu",
+    contactPhone: "+91-80-6614-2222",
+    establishedYear: 1972,
+    facilities: ["Industry Labs", "Placement Cell"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 450, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 440, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 430, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "500000", totalFees: "1000000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "M.S. Ramaiah Institute of Technology (MSRIT)",
+    location: "MSR Nagar, Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "MSRIT",
+    affiliation: "Autonomous",
+    about: "MSRIT is highly reputed for technical excellence.",
+    websiteUrl: "https://msrit.edu",
+    contactEmail: "admissions@msrit.edu",
+    contactPhone: "+91-80-23600822",
+    establishedYear: 1962,
+    facilities: ["Library", "Labs", "Hostel"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Software Engineering", category: "General", cutoffScore: 440, ugSeats: 0, pgSeats: 25, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 410, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 405, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "150000", totalFees: "300000", description: "2 year", academicYear: "2024-25" }
     ]
   },
   {
@@ -62046,22 +61969,364 @@ var karnatakaColeges = [
     state: "Karnataka",
     collegeCode: "BMSCE",
     affiliation: "Autonomous",
-    about: "BMSCE is a historic institution with a strong emphasis on research and innovation. It offers highly competitive PG programs.",
+    about: "One of the oldest and most prestigious engineering colleges.",
     websiteUrl: "https://bmsce.ac.in",
-    contactEmail: "admissions@bmsce.ac.in",
+    contactEmail: "info@bmsce.ac.in",
     contactPhone: "+91-80-26622130",
     establishedYear: 1946,
-    facilities: ["Innovation Cell", "Historical Library", "Modern Labs", "Student Clubs"],
-    qualification: "B.E/B.Tech/BCA/BSc with required marks",
+    facilities: ["Innovation Cell", "Sports"],
+    qualification: "Bachelor's with 50%",
     cutoffs: [
-      { courseName: "MBA HR Management", category: "General", cutoffScore: 410, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
-      { courseName: "MCA Cyber Security", category: "General", cutoffScore: 450, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
-      { courseName: "MTech Machine Learning", category: "General", cutoffScore: 485, ugSeats: 0, pgSeats: 25, academicYear: "2024-25" }
+      { courseName: "MCA", category: "General", cutoffScore: 430, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 420, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "M.Tech Data Science", category: "General", cutoffScore: 415, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
     ],
     fees: [
-      { courseType: "PG", courseName: "MBA HR Management", annualFees: "180000", totalFees: "360000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MCA Cyber Security", annualFees: "150000", totalFees: "300000", description: "2 year program", academicYear: "2024-25" },
-      { courseType: "PG", courseName: "MTech Machine Learning", annualFees: "200000", totalFees: "400000", description: "2 year program", academicYear: "2024-25" }
+      { courseType: "PG", courseName: "MCA", annualFees: "120000", totalFees: "240000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "University of Mysore",
+    location: "Mysore",
+    city: "Mysore",
+    state: "Karnataka",
+    collegeCode: "UOM",
+    affiliation: "State University",
+    about: "A historic university with diverse PG programs.",
+    websiteUrl: "https://uni-mysore.ac.in",
+    contactEmail: "registrar@uni-mysore.ac.in",
+    contactPhone: "+91-821-2419400",
+    establishedYear: 1916,
+    facilities: ["Heritage Campus", "Vast Library"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MBA", category: "General", cutoffScore: 350, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "M.Tech Information Technology", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MBA", annualFees: "40000", totalFees: "80000", description: "University Fees", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Bangalore Institute of Technology (BIT)",
+    location: "V.V. Puram, Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "BIT",
+    affiliation: "VTU Affiliated",
+    about: "Leading engineering college in the heart of Bangalore.",
+    websiteUrl: "https://bit-bangalore.edu.in",
+    contactEmail: "principal@bit-bangalore.edu.in",
+    contactPhone: "+91-80-26615865",
+    establishedYear: 1979,
+    facilities: ["Library", "Labs"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 390, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 380, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 370, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "110000", totalFees: "220000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "National Institute of Engineering (NIE)",
+    location: "Mysore",
+    city: "Mysore",
+    state: "Karnataka",
+    collegeCode: "NIE",
+    affiliation: "Autonomous",
+    about: "Premier private engineering college in Mysore.",
+    websiteUrl: "https://nie.ac.in",
+    contactEmail: "admissions@nie.ac.in",
+    contactPhone: "+91-821-2480475",
+    establishedYear: 1946,
+    facilities: ["Campus Wi-Fi", "Labs"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Power Systems", category: "General", cutoffScore: 370, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 360, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 355, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "100000", totalFees: "200000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Siddaganga Institute of Technology (SIT)",
+    location: "Tumkur",
+    city: "Tumkur",
+    state: "Karnataka",
+    collegeCode: "SIT",
+    affiliation: "Autonomous",
+    about: "Known for discipline and high academic standards.",
+    websiteUrl: "https://sit.ac.in",
+    contactEmail: "principal@sit.ac.in",
+    contactPhone: "+91-816-2282696",
+    establishedYear: 1963,
+    facilities: ["Large Library", "Innovation Center"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Structural Engineering", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 330, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "90000", totalFees: "180000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "REVA University",
+    location: "Yelahanka, Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "REVA",
+    affiliation: "Private University",
+    about: "Modern private university with industry-centric curriculum.",
+    websiteUrl: "https://reva.edu.in",
+    contactEmail: "admissions@reva.edu.in",
+    contactPhone: "+91-80-46966966",
+    establishedYear: 2012,
+    facilities: ["Eco-friendly Campus", "Auditorium"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Data Science", category: "General", cutoffScore: 360, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 350, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 300, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "160000", totalFees: "320000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Jain University",
+    location: "Jayanagar, Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "JU",
+    affiliation: "Deemed University",
+    about: "Renowned for its MBA programs and entrepreneurial focus.",
+    websiteUrl: "https://jainuniversity.ac.in",
+    contactEmail: "admissions@jainuniversity.ac.in",
+    contactPhone: "+91-80-46650100",
+    establishedYear: 1990,
+    facilities: ["Incubation Center", "Sports Excellence"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MBA", category: "General", cutoffScore: 380, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 370, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "M.Tech Cyber Security", category: "General", cutoffScore: 360, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MBA", annualFees: "450000", totalFees: "900000", description: "Premium Fees", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "New Horizon College of Engineering (NHCE)",
+    location: "Marathahalli, Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "NHCE",
+    affiliation: "Autonomous",
+    about: "Known for proximity to IT hubs and excellent placements.",
+    websiteUrl: "https://newhorizonindia.edu",
+    contactEmail: "admissionsnhce@newhorizonindia.edu",
+    contactPhone: "+91-80-66297777",
+    establishedYear: 2001,
+    facilities: ["Smart Campus", "Placement Hub"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MCA", category: "General", cutoffScore: 360, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 350, ugSeats: 0, pgSeats: 180, academicYear: "2024-25" },
+      { courseName: "M.Tech Machine Design", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MCA", annualFees: "150000", totalFees: "300000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "St. Joseph Engineering College",
+    location: "Vamanjoor, Mangalore",
+    city: "Mangalore",
+    state: "Karnataka",
+    collegeCode: "SJEC",
+    affiliation: "VTU Affiliated",
+    about: "Reputed Christian minority institution in Mangalore.",
+    websiteUrl: "https://sjec.ac.in",
+    contactEmail: "sjec@sjec.ac.in",
+    contactPhone: "+91-824-2263745",
+    establishedYear: 2002,
+    facilities: ["Quiet Campus", "Placement Cell"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MCA", category: "General", cutoffScore: 290, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 280, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 270, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MCA", annualFees: "70000", totalFees: "140000", description: "VTU Standard", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Sahyadri College of Engineering & Management",
+    location: "Adyar, Mangalore",
+    city: "Mangalore",
+    state: "Karnataka",
+    collegeCode: "SCEM",
+    affiliation: "VTU Affiliated",
+    about: "Focused on research and innovation-driven education.",
+    websiteUrl: "https://sahyadri.edu.in",
+    contactEmail: "sahyadri@sahyadri.edu.in",
+    contactPhone: "+91-824-2277222",
+    establishedYear: 2007,
+    facilities: ["Startup Incubator", "Riverview Campus"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MBA", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 290, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "M.Tech VLSI", category: "General", cutoffScore: 280, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MBA", annualFees: "75000", totalFees: "150000", description: "VTU Standard", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Government Engineering College, Hassan",
+    location: "Hassan",
+    city: "Hassan",
+    state: "Karnataka",
+    collegeCode: "GECH",
+    affiliation: "State Government",
+    about: "Affordable high-quality technical education.",
+    websiteUrl: "https://gechassan.ac.in",
+    contactEmail: "principal@gechassan.ac.in",
+    contactPhone: "+91-8172-240111",
+    establishedYear: 2007,
+    facilities: ["Government Labs", "Hostel"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech", category: "General", cutoffScore: 250, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 240, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 235, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "25000", totalFees: "50000", description: "Government Fees", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "KLS Gogte Institute of Technology",
+    location: "Belgaum",
+    city: "Belgaum",
+    state: "Karnataka",
+    collegeCode: "GIT",
+    affiliation: "Autonomous",
+    about: "Premier engineering college in the Belgaum region.",
+    websiteUrl: "https://git.edu",
+    contactEmail: "principal@git.edu",
+    contactPhone: "+91-831-2405500",
+    establishedYear: 1979,
+    facilities: ["Aeronautical Lab", "Incubation Center"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 330, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 325, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "110000", totalFees: "220000", description: "Autonomous Fees", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Kle Technological University",
+    location: "Hubballi",
+    city: "Hubballi",
+    state: "Karnataka",
+    collegeCode: "KLETech",
+    affiliation: "Private University",
+    about: "Pioneer in technical education in North Karnataka.",
+    websiteUrl: "https://kletech.ac.in",
+    contactEmail: "info@kletech.ac.in",
+    contactPhone: "+91-836-2378123",
+    establishedYear: 1947,
+    facilities: ["Innovation Hub", "Large Campus"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Machine Design", category: "General", cutoffScore: 330, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 315, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "100000", totalFees: "200000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Alliance University",
+    location: "Anekal, Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "ALLIANCE",
+    affiliation: "Private University",
+    about: "International standard private university.",
+    websiteUrl: "https://alliance.edu.in",
+    contactEmail: "admissions@alliance.edu.in",
+    contactPhone: "+91-80-46199000",
+    establishedYear: 2010,
+    facilities: ["Global Campus", "Placements"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MBA", category: "General", cutoffScore: 400, ugSeats: 0, pgSeats: 300, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 350, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "M.Tech", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MBA", annualFees: "750000", totalFees: "1500000", description: "Premium Global Program", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Karnatak University",
+    location: "Dharwad",
+    city: "Dharwad",
+    state: "Karnataka",
+    collegeCode: "KUD",
+    affiliation: "State University",
+    about: "Premier university in North Karnataka.",
+    websiteUrl: "https://kud.ac.in",
+    contactEmail: "registrar@kud.ac.in",
+    contactPhone: "+91-836-2215225",
+    establishedYear: 1949,
+    facilities: ["Large Campus", "Museum"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MBA", category: "General", cutoffScore: 310, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MBA", annualFees: "35000", totalFees: "70000", description: "University Fees", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Ballari Institute of Technology and Management",
+    location: "Bellary",
+    city: "Bellary",
+    state: "Karnataka",
+    collegeCode: "BITM",
+    affiliation: "VTU Affiliated",
+    about: "Leading technical institution in the Bellary region.",
+    websiteUrl: "https://bitm.edu.in",
+    contactEmail: "bitm@bitm.edu.in",
+    contactPhone: "+91-8392-237100",
+    establishedYear: 1997,
+    facilities: ["Campus Wi-Fi", "Placement Cell"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MBA", category: "General", cutoffScore: 275, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 265, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "M.Tech", category: "General", cutoffScore: 260, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MBA", annualFees: "65000", totalFees: "130000", description: "VTU Fees", academicYear: "2024-25" }
     ]
   }
 ];
@@ -62284,7 +62549,7 @@ async function ensureAdminUser() {
 }
 async function autoSeed() {
   const [jobsCount] = await db.select({ count: count() }).from(jobsTable);
-  const [examsCount] = await db.select({ count: count() }).from(examsTable);
+  const [examsCount] = await db.select({ count: count() }).from(examsTable2);
   if (jobsCount.count === 0) {
     logger.info("Jobs table is empty \u2014 seeding live jobs...");
     const allJobs = [
@@ -62302,69 +62567,30 @@ async function autoSeed() {
   }
   if (examsCount.count === 0) {
     logger.info("Exams table is empty \u2014 seeding exams and materials...");
-    const exams = await db.insert(examsTable).values([
+    const exams = await db.insert(examsTable2).values([
       // ... (rest of the exams insertion from the original file)
       {
-        name: "PG-CET M.Tech",
-        fullName: "Post Graduate Common Entrance Test \u2013 M.Tech 2026 (Karnataka)",
-        description: "KEA PG-CET M.Tech 2026 for admission to M.Tech, M.E, M.Arch, M.Plan programs in Karnataka government and private engineering colleges. CBT tests candidates on discipline-specific engineering subjects.",
+        name: "Karnataka PGCET 2026",
+        fullName: "Post Graduate Common Entrance Test 2026 (MBA/MCA/M.Tech)",
+        description: "Comprehensive entrance test for admission to MBA, MCA, M.Tech, M.E, M.Arch, and M.Plan programs in Karnataka. Managed by the Karnataka Examinations Authority (KEA).",
         examDate: "2026-06-15",
         applicationStartDate: "2026-04-01",
-        applicationEndDate: "2026-05-10",
-        applyLink: "https://kea.kar.nic.in/pgcet2026",
-        eligibility: "Recognized B.E/B.Tech in relevant engineering branch with min 50% aggregate (45% SC/ST). Karnataka domicile or 7 years study in Karnataka. Final year students may apply provisionally.",
-        applicationGuide: "Step 1: Visit the official KEA portal and navigate to the 'Admission' tab then select 'PGCET 2026'\nStep 2: Download and read the M.Tech Information Bulletin carefully\nStep 3: Click on the 'Online Application' link specifically for M.Tech/M.E/M.Arch\nStep 4: Register using your Aadhaar number and mobile for OTP verification\nStep 5: Fill in your academic details and select your PGCET subject code\nStep 6: Upload your photograph, signature, and left-hand thumb impression\nStep 7: Pay the application fee online (\u20B9650 for General/OBC)\nStep 8: Take a printout of the final submitted application for counseling",
-        officialWebsite: "https://kea.kar.nic.in"
-      },
-      {
-        name: "PG-CET MBA",
-        fullName: "Post Graduate Common Entrance Test \u2013 MBA 2026 (Karnataka)",
-        description: "Karnataka PG-CET MBA 2026 by KEA for 2-year MBA programs across Karnataka business schools. Tests Verbal Ability, Quantitative Aptitude, Logical Reasoning, and General Awareness.",
-        examDate: "2026-06-20",
-        applicationStartDate: "2026-04-05",
         applicationEndDate: "2026-05-15",
         applyLink: "https://kea.kar.nic.in/pgcet2026",
-        eligibility: "Any Bachelor's degree with min 50% marks (45% for SC/ST/OBC-I/Cat-1). Final year students eligible provisionally. No age bar for private colleges.",
-        applicationGuide: "Step 1: On the KEA homepage, look for 'Flash News' or 'Latest Announcements' for PGCET 2026\nStep 2: Select the 'MBA Online Application' link to enter the dedicated portal\nStep 3: Create a login ID using your email and choose a strong password\nStep 4: Enter your personal details exactly as per your 10th marksheet\nStep 5: Select your preferred exam cities (you can choose up to 3)\nStep 6: Upload certificates for reservation (if applicable)\nStep 7: Complete the payment process via Net Banking or UPI\nStep 8: Preserve the 'S-Number' generated after successful submission",
-        officialWebsite: "https://kea.kar.nic.in"
-      },
-      {
-        name: "PG-CET MCA",
-        fullName: "Post Graduate Common Entrance Test \u2013 MCA 2026 (Karnataka)",
-        description: "KEA PG-CET MCA 2026 for 2-year MCA programs in Karnataka. Tests Mathematics, Computer Science fundamentals, and Analytical Ability. MCA graduates are highly sought in IT industry.",
-        examDate: "2026-06-18",
-        applicationStartDate: "2026-04-05",
-        applicationEndDate: "2026-05-15",
-        applyLink: "https://kea.kar.nic.in/pgcet2026",
-        eligibility: "BCA/B.Sc Computer Science/any degree with Mathematics. Min 50% aggregate (45% SC/ST). Mathematics at 10+2 or degree level required.",
-        applicationGuide: "Step 1: Access the KEA portal and find the 'PGCET MCA 2026' link in the sidebar\nStep 2: Register as a new user and verify your mobile number\nStep 3: Fill in the qualifying examination details (BCA/BSc)\nStep 4: Upload your recent passport size photo and signature\nStep 5: Pay the prescribed fee (\u20B9650 for Gen/OBC, \u20B9500 for SC/ST)\nStep 6: Cross-verify all details before clicking 'Final Submit'\nStep 7: Download the PDF of the filled-in application form\nStep 8: Follow KEA announcements for Hall Ticket download dates",
+        eligibility: "MBA: Any Bachelor's degree with 50% aggregate.\nMCA: BCA/B.Sc (CS/IT) or any degree with Mathematics with 50% aggregate.\nM.Tech: B.E/B.Tech in relevant branch with 50% aggregate.\n(45% for SC/ST/OBC-I candidates).",
+        applicationGuide: "Step 1: Visit the official KEA portal (kea.kar.nic.in) and select 'PGCET 2026'.\nStep 2: Choose your desired course (MBA, MCA, or M.Tech) for application.\nStep 3: Register using your mobile number and Aadhaar details.\nStep 4: Fill in personal and academic information accurately.\nStep 5: Upload your photograph, signature, and thumb impression.\nStep 6: Pay the application fee (\u20B9650 for Gen/OBC, \u20B9500 for SC/ST).\nStep 7: Submit the application and download the confirmation page.\nStep 8: Preserve the Application Number and course details for future reference.",
         officialWebsite: "https://kea.kar.nic.in"
       }
     ]).returning();
     await db.insert(studyMaterialsTable).values([
       { examId: exams[0].id, title: "M.Tech Engineering Mathematics \u2013 NPTEL Notes", subject: "Engineering Mathematics", type: "Notes", description: "Comprehensive notes on Calculus, Linear Algebra, Differential Equations, Numerical Methods, and Transforms for PG-CET M.Tech prep.", url: "https://nptel.ac.in/courses/111104086" },
       { examId: exams[0].id, title: "Data Structures & Algorithms \u2013 NPTEL Video Course", subject: "Computer Science", type: "Video", description: "Complete video course covering Arrays, Linked Lists, Trees, Graphs, Dynamic Programming for M.Tech CSE PG-CET.", url: "https://nptel.ac.in/courses/106102064" },
-      { examId: exams[0].id, title: "M.Tech PG-CET Previous Papers \u2013 GFG GATE Papers", subject: "All Engineering Subjects", type: "PDF", description: "Previous year M.Tech PG-CET Karnataka papers with answer keys. Covers CS, ECE, Civil, Mechanical branches.", url: "https://www.geeksforgeeks.org/gate-previous-year-solved-papers/" },
-      { examId: exams[0].id, title: "M.Tech PG-CET Full Mock Test Series \u2013 GATE Overflow", subject: "All Subjects", type: "Practice_Test", description: "Full-length mock tests with percentile ranking and performance analytics for M.Tech PG-CET.", url: "https://gateoverflow.in/" },
-      { examId: exams[0].id, title: "Signals & Systems \u2013 NPTEL ECE (IIT Faculty)", subject: "Electronics Engineering", type: "Video", description: "Fourier Analysis, Z-Transform, Laplace Transform, Sampling, and Filter Design for ECE PG-CET by IIT faculty.", url: "https://nptel.ac.in/courses/108103174" },
-      { examId: exams[0].id, title: "Structural Analysis \u2013 NPTEL Civil Engineering", subject: "Civil Engineering", type: "Video", description: "Trusses, beams, frames, RCC Design, Soil Mechanics, and Fluid Mechanics for Civil Engineering PG-CET.", url: "https://nptel.ac.in/courses/105104122" },
-      { examId: exams[0].id, title: "Thermodynamics \u2013 NPTEL Mechanical Engineering", subject: "Mechanical Engineering", type: "Video", description: "Thermodynamics, Heat Transfer, Fluid Mechanics, Theory of Machines for Mechanical PG-CET by IIT professors.", url: "https://nptel.ac.in/courses/112104113" },
-      { examId: exams[0].id, title: "Engineering Aptitude Practice \u2013 Adda247", subject: "Aptitude", type: "Practice_Test", description: "Topic-wise engineering aptitude practice questions and timed quizzes aligned with PG-CET style problem-solving.", url: "https://www.adda247.com/engineering-jobs/" },
-      { examId: exams[0].id, title: "GATE/PG-CET Formula Handbook \u2013 CSE", subject: "Computer Science", type: "Notes", description: "Quick revision formulas and short notes for algorithms, OS, DBMS, CN, and compiler design.", url: "https://www.geeksforgeeks.org/gate-cs-notes-gq/" },
-      { examId: exams[1].id, title: "MBA PGCET Quantitative Aptitude \u2013 IndiaBIX", subject: "Quantitative Aptitude", type: "Practice_Test", description: "500+ QA problems on Arithmetic, Algebra, DI, and Time/Speed for MBA PGCET prep.", url: "https://www.indiabix.com/aptitude/questions-and-answers/" },
-      { examId: exams[1].id, title: "Verbal Ability \u2013 MBA PGCET YouTube Course", subject: "Verbal Ability", type: "Video", description: "English grammar, RC strategies, verbal reasoning, and para-jumbles for MBA PGCET on YouTube.", url: "https://www.youtube.com/results?search_query=MBA+PGCET+verbal+ability+preparation" },
-      { examId: exams[1].id, title: "Current Affairs 2025-26 \u2013 GK Today", subject: "General Awareness", type: "Notes", description: "Monthly current affairs, static GK, Economy, Science & Technology for MBA PGCET GK section.", url: "https://www.gktoday.in/current-affairs/" },
-      { examId: exams[1].id, title: "MBA PGCET Mock Tests \u2013 Embibe", subject: "All Subjects", type: "Practice_Test", description: "Full MBA PGCET mock tests with previous year papers, time management, and section-wise analytics.", url: "https://www.embibe.com/exams/karnataka-pgcet-mba/" },
-      { examId: exams[1].id, title: "Logical Reasoning \u2013 IndiaBIX Practice", subject: "Logical Reasoning", type: "Practice_Test", description: "Blood Relations, Syllogisms, Seating Arrangements, Puzzles for MBA PGCET Logical Reasoning section.", url: "https://www.indiabix.com/logical-reasoning/questions-and-answers/" },
-      { examId: exams[1].id, title: "MBA PGCET Previous Papers \u2013 EntranceZone", subject: "All Subjects", type: "PDF", description: "Previous years MBA PGCET papers and exam pattern references useful for final revision.", url: "https://www.entrancezone.com/exam/karnataka-pgcet" },
-      { examId: exams[1].id, title: "Data Interpretation Sets \u2013 Oliveboard", subject: "Quantitative Aptitude", type: "Practice_Test", description: "High-yield DI sets with detailed solutions to improve speed and accuracy for MBA PG-CET quant section.", url: "https://www.oliveboard.in/blog/data-interpretation-questions/" },
-      { examId: exams[2].id, title: "MCA PG-CET Mathematics \u2013 NPTEL Discrete Maths", subject: "Mathematics", type: "Video", description: "Algebra, Calculus, Probability & Statistics, Set Theory, Mathematical Logic for MCA PG-CET.", url: "https://nptel.ac.in/courses/106106094" },
-      { examId: exams[2].id, title: "C Programming & Data Structures \u2013 NPTEL", subject: "Computer Science", type: "Video", description: "C Programming, Data Structures, DBMS, OS, Computer Networks for MCA PG-CET by IIT faculty.", url: "https://nptel.ac.in/courses/106105085" },
-      { examId: exams[2].id, title: "MCA PG-CET Mock Tests \u2013 Testbook", subject: "All Subjects", type: "Practice_Test", description: "Full MCA PGCET practice tests: Mathematics + CS + Analytical Ability. Tracks performance and weak areas.", url: "https://testbook.com/karnataka-pgcet-mca" },
-      { examId: exams[2].id, title: "DBMS Concepts \u2013 GeeksforGeeks", subject: "Computer Science", type: "Notes", description: "ER diagrams, Normalization, SQL, Transactions, Indexing for MCA PG-CET Computer Science section.", url: "https://www.geeksforgeeks.org/dbms/" },
-      { examId: exams[2].id, title: "Operating Systems Notes \u2013 GeeksforGeeks", subject: "Computer Science", type: "Notes", description: "Processes, threads, synchronization, memory management, scheduling, and deadlocks for MCA entrance preparation.", url: "https://www.geeksforgeeks.org/operating-systems/" },
-      { examId: exams[2].id, title: "Computer Networks Notes \u2013 GeeksforGeeks", subject: "Computer Science", type: "Notes", description: "OSI model, TCP/IP, routing, transport layer, and application protocols for MCA PG-CET revision.", url: "https://www.geeksforgeeks.org/computer-network-tutorials/" },
-      { examId: exams[2].id, title: "MCA Entrance Mock Quiz \u2013 SelfStudys", subject: "All Subjects", type: "Practice_Test", description: "Section-wise MCA entrance mock quizzes covering mathematics, reasoning, and computer science fundamentals.", url: "https://www.selfstudys.com/mcatest" }
+      { examId: exams[0].id, title: "MBA PGCET Quantitative Aptitude \u2013 IndiaBIX", subject: "Quantitative Aptitude", type: "Practice_Test", description: "500+ QA problems on Arithmetic, Algebra, DI, and Time/Speed for MBA PGCET prep.", url: "https://www.indiabix.com/aptitude/questions-and-answers/" },
+      { examId: exams[0].id, title: "Verbal Ability \u2013 MBA PGCET YouTube Course", subject: "Verbal Ability", type: "Video", description: "English grammar, RC strategies, verbal reasoning, and para-jumbles for MBA PGCET on YouTube.", url: "https://www.youtube.com/results?search_query=MBA+PGCET+verbal+ability+preparation" },
+      { examId: exams[0].id, title: "MCA PG-CET Mathematics \u2013 NPTEL Discrete Maths", subject: "Mathematics", type: "Video", description: "Algebra, Calculus, Probability & Statistics, Set Theory, Mathematical Logic for MCA PG-CET.", url: "https://nptel.ac.in/courses/106106094" },
+      { examId: exams[0].id, title: "C Programming & Data Structures \u2013 NPTEL", subject: "Computer Science", type: "Video", description: "C Programming, Data Structures, DBMS, OS, Computer Networks for MCA PG-CET by IIT faculty.", url: "https://nptel.ac.in/courses/106105085" },
+      { examId: exams[0].id, title: "Previous Year Papers \u2013 KEA Archive", subject: "All Subjects", type: "PDF", description: "Consolidated archive of previous year question papers for MBA, MCA, and M.Tech PGCET.", url: "https://kea.kar.nic.in/pgcet2026" },
+      { examId: exams[0].id, title: "General Awareness \u2013 GK Today", subject: "General Awareness", type: "Notes", description: "Monthly current affairs and static GK for PGCET preparation.", url: "https://www.gktoday.in/current-affairs/" }
     ]);
     logger.info("Auto-seed completed: 3exams, 24 study materials");
   }
@@ -62387,9 +62613,15 @@ async function main() {
     logger.info({ port }, "Server listening");
   });
 }
-main();
+if (process.env.NODE_ENV !== "test" && (import.meta.url.endsWith("index.ts") || import.meta.url.endsWith("index.mjs"))) {
+  main().catch((err) => {
+    logger.error(err, "Server failed to start");
+    process.exit(1);
+  });
+}
 export {
-  logger
+  logger,
+  main
 };
 /*! Bundled license information:
 

@@ -13,6 +13,7 @@ import PgCetHub from "@/pages/PgCetHub";
 import PgCetResultFinder from "@/pages/PgCetResultFinder";
 import LoginPage from "@/pages/LoginPage";
 import ApplyPage from "@/pages/ApplyPage";
+import PgCetApplyPage from "@/pages/PgCetApplyPage";
 import AdminPanel from "@/pages/AdminPanel";
 import Profile from "@/pages/Profile";
 import NotFound from "@/pages/not-found";
@@ -37,6 +38,7 @@ function Router() {
             <Route path="/jobs/:id/apply" component={ApplyPage} />
             <Route path="/applications" component={ApplicationTracker} />
             <Route path="/exams" component={PgCetHub} />
+            <Route path="/exams/:id/apply" component={PgCetApplyPage} />
             <Route path="/exams/result-finder" component={PgCetResultFinder} />
             <Route path="/admin" component={AdminPanel} />
             <Route path="/profile" component={Profile} />

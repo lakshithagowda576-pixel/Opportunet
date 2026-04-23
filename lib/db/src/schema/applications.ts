@@ -3,6 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { jobsTable } from "./jobs";
 import { usersTable } from "./users";
+import { examsTable } from "./exams";
 
 export const applicationStatusEnum = pgEnum("application_status", [
   "Pending",
@@ -15,8 +16,9 @@ export const applicationStatusEnum = pgEnum("application_status", [
 export const applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
   jobId: integer("job_id")
-    .notNull()
     .references(() => jobsTable.id),
+  examId: integer("exam_id")
+    .references(() => examsTable.id),
   userId: integer("user_id").references(() => usersTable.id),
   applicantName: text("applicant_name").notNull(),
   applicantEmail: text("applicant_email").notNull(),
@@ -27,6 +29,7 @@ export const applicationsTable = pgTable("applications", {
   resumeUrl: text("resume_url"),
   acceptedTerms: boolean("accepted_terms").notNull().default(false),
   coverLetter: text("cover_letter"),
+  course: text("course"), // For PGCET (MBA, MCA, M.Tech)
   status: applicationStatusEnum("status").notNull().default("Pending"),
   appliedAt: timestamp("applied_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),

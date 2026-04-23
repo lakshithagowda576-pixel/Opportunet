@@ -74,6 +74,7 @@ async function seed() {
       hrEmail: "hr@accenture.com",
       salary: "₹10–18 LPA",
       openings: 6,
+      official_url: "https://www.accenture.com/in-en/careers",
     },
     {
       title: "Full Stack Developer (React + Node)",

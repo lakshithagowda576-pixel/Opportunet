@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Briefcase, LayoutDashboard, FileText, GraduationCap, Menu, X,
   Bell, Shield, LogOut, LogIn, ChevronDown, User,
-  Github, Twitter, Mail, MapPin, Phone, ExternalLink, Sparkles
+  Github, Twitter, Mail, MapPin, Phone, ExternalLink, Sparkles, ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar, Info, Star } from "lucide-react";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -19,6 +21,19 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, logout, isLoading } = useAuth();
+  const [showMonthlyUpdate, setShowMonthlyUpdate] = useState(false);
+
+  useEffect(() => {
+    const currentMonth = new Date().getMonth();
+    const lastShown = localStorage.getItem("lastMonthlyUpdate");
+    if (lastShown !== currentMonth.toString()) {
+      const timer = setTimeout(() => {
+        setShowMonthlyUpdate(true);
+        localStorage.setItem("lastMonthlyUpdate", currentMonth.toString());
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -343,6 +358,53 @@ export function AppLayout({ children }: AppLayoutProps) {
           </div>
         </div>
       </footer>
+      {/* Monthly Update Modal */}
+      <Dialog open={showMonthlyUpdate} onOpenChange={setShowMonthlyUpdate}>
+        <DialogContent className="max-w-md rounded-[2.5rem] p-0 overflow-hidden border-none shadow-2xl">
+          <div className="bg-primary p-8 text-white relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-10">
+               <Sparkles className="w-24 h-24 rotate-12" />
+            </div>
+            <div className="relative z-10 space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest">
+                <Calendar className="w-3 h-3" /> Monthly Update
+              </div>
+              <h2 className="text-3xl font-display font-black leading-tight">
+                Fresh Opportunities in <br />
+                <span className="text-indigo-200">{new Date().toLocaleString('default', { month: 'long' })}</span>
+              </h2>
+            </div>
+          </div>
+          <div className="p-8 bg-white dark:bg-slate-900 space-y-6">
+            <div className="space-y-4">
+              <div className="flex items-start gap-4 p-4 rounded-2xl bg-secondary/50 border border-border/50">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center flex-shrink-0">
+                  <Briefcase className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-black text-sm text-foreground">15+ New IT Roles</p>
+                  <p className="text-xs text-muted-foreground font-medium">Major companies like Accenture and Google have refreshed their listings.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4 p-4 rounded-2xl bg-secondary/50 border border-border/50">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center flex-shrink-0">
+                  <Star className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-black text-sm text-foreground">Government Exams</p>
+                  <p className="text-xs text-muted-foreground font-medium">PG-CET 2026 application window is now open for pre-registration.</p>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowMonthlyUpdate(false)}
+              className="w-full py-4 bg-primary text-white rounded-2xl font-black shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-98 transition-all flex items-center justify-center gap-2"
+            >
+              Let's Explore <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

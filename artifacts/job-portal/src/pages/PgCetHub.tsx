@@ -48,15 +48,26 @@ export default function PgCetHub() {
     if (url.includes('youtu.be/')) {
       return url.replace('youtu.be/', 'youtube.com/embed/');
     }
+    if (url.includes('youtube.com/playlist?list=')) {
+      const listId = url.split('list=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/videoseries?list=${listId}`;
+    }
     return url;
   };
 
   const getYouTubeThumbnail = (url: string) => {
     if (!isYouTubeUrl(url)) return null;
     let videoId = '';
-    if (url.includes('v=')) videoId = url.split('v=')[1].split('&')[0];
-    else if (url.includes('youtu.be/')) videoId = url.split('youtu.be/')[1];
-    return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    if (url.includes('v=')) {
+      videoId = url.split('v=')[1].split('&')[0];
+      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    }
+    if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1].split('?')[0];
+      return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    }
+    // For playlists, we use a generic preparation thumbnail or the first video if known
+    return "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?q=80&w=2073&auto=format&fit=crop";
   };
 
   const filteredMaterials = selectedExam === "all"
@@ -198,7 +209,7 @@ export default function PgCetHub() {
                 {/* Header */}
                 <div className="bg-slate-950 p-10 md:p-16 text-white relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-transparent opacity-50"></div>
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 relative z-10">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-10 relative z-10">
                     <div className="space-y-4">
                       <div className="inline-block px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-primary text-[10px] font-black uppercase tracking-[0.2em] mb-2">
                         Official Entrance Exam
@@ -207,6 +218,14 @@ export default function PgCetHub() {
                       <p className="text-slate-400 max-w-3xl leading-relaxed text-lg font-medium">{exam.description}</p>
                     </div>
 
+                    <div className="flex flex-col gap-4 w-full md:w-auto shrink-0">
+                      <Link href={`/exams/${exam.id}/apply`} className="px-10 py-5 bg-primary text-white rounded-[2rem] font-black shadow-2xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-center flex items-center justify-center gap-3">
+                         <CheckCircle2 className="w-5 h-5" /> Register & Track
+                      </Link>
+                      <a href={exam.applyLink} target="_blank" rel="noreferrer" className="px-10 py-5 bg-white/5 text-white border border-white/10 backdrop-blur-3xl rounded-[2rem] font-black hover:bg-white/10 transition-all text-center flex items-center justify-center gap-2">
+                        Official Portal <ExternalLink className="w-4 h-4" />
+                      </a>
+                    </div>
                   </div>
                 </div>
 
@@ -503,7 +522,9 @@ export default function PgCetHub() {
                           href={activeMaterial.url} target="_blank" rel="noreferrer"
                           className="px-12 py-6 bg-primary text-white rounded-[2rem] font-black shadow-2xl shadow-primary/40 flex items-center gap-3 hover:scale-105 transition-all"
                         >
-                          {activeMaterial.type === 'PDF' ? 'Download Assets' : 'Open Resource'} <ExternalLink className="w-5 h-5" />
+                          {activeMaterial.type === 'PDF' ? 'Download Assets' : 
+                           activeMaterial.type === 'Practice_Test' ? 'Start Test Challenge' : 'Open Resource'} 
+                          {activeMaterial.type === 'Practice_Test' ? <FlaskConical className="w-5 h-5" /> : <ExternalLink className="w-5 h-5" />}
                         </a>
                       </div>
                     </div>
