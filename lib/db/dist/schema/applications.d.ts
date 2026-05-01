@@ -1,4 +1,4 @@
-export declare const applicationStatusEnum: import("drizzle-orm/pg-core").PgEnum<["Pending", "Reviewed", "Interview", "Offered", "Rejected"]>;
+export declare const applicationStatusEnum: import("drizzle-orm/pg-core").PgEnum<["Pre-Registered", "Pending", "Reviewed", "Interview", "Offered", "Rejected", "Redirected"]>;
 export declare const applicationsTable: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "applications";
     schema: undefined;
@@ -27,7 +27,24 @@ export declare const applicationsTable: import("drizzle-orm/pg-core").PgTableWit
             columnType: "PgInteger";
             data: number;
             driverParam: string | number;
-            notNull: true;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        examId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "exam_id";
+            tableName: "applications";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
@@ -207,19 +224,36 @@ export declare const applicationsTable: import("drizzle-orm/pg-core").PgTableWit
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        course: import("drizzle-orm/pg-core").PgColumn<{
+            name: "course";
+            tableName: "applications";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         status: import("drizzle-orm/pg-core").PgColumn<{
             name: "status";
             tableName: "applications";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "Pending" | "Reviewed" | "Interview" | "Offered" | "Rejected";
+            data: "Pre-Registered" | "Pending" | "Reviewed" | "Interview" | "Offered" | "Rejected" | "Redirected";
             driverParam: string;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["Pending", "Reviewed", "Interview", "Offered", "Rejected"];
+            enumValues: ["Pre-Registered", "Pending", "Reviewed", "Interview", "Offered", "Rejected", "Redirected"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -241,21 +275,41 @@ export declare const applicationsTable: import("drizzle-orm/pg-core").PgTableWit
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        updatedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "updated_at";
+            tableName: "applications";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
     };
     dialect: "pg";
 }>;
 export declare const insertApplicationSchema: import("zod/v4").ZodObject<{
-    jobId: import("zod/v4").ZodInt;
+    resumeUrl: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
+    education: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
+    qualification: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
+    updatedAt: import("zod/v4").ZodOptional<import("zod/v4").ZodDate>;
+    jobId: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodInt>>;
+    examId: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodInt>>;
     userId: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodInt>>;
     applicantName: import("zod/v4").ZodString;
     applicantEmail: import("zod/v4").ZodString;
     applicantPhone: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
     applicantAddress: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
-    education: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
-    qualification: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
-    resumeUrl: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
     acceptedTerms: import("zod/v4").ZodOptional<import("zod/v4").ZodBoolean>;
     coverLetter: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
+    course: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
 }, {
     out: {};
     in: {};

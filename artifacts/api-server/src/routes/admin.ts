@@ -41,7 +41,7 @@ router.get("/applications", async (req, res) => {
 router.patch("/applications/:id/status", async (req, res) => {
   const id = parseInt(req.params.id);
   const { status } = z.object({
-    status: z.enum(["Pending", "Reviewed", "Interview", "Offered", "Rejected"])
+    status: z.enum(["Pre-Registered", "Pending", "Reviewed", "Interview", "Offered", "Rejected"])
   }).parse(req.body);
   const [updated] = await db.update(applicationsTable)
     .set({ status })
@@ -49,26 +49,50 @@ router.patch("/applications/:id/status", async (req, res) => {
     .returning();
   if (!updated) { res.status(404).json({ error: "Application not found" }); return; }
 
+  const [appWithJob] = await db.select({
+    applicantName: applicationsTable.applicantName,
+    applicantEmail: applicationsTable.applicantEmail,
+    jobTitle: jobsTable.title,
+    company: jobsTable.company
+  }).from(applicationsTable)
+    .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id))
+    .where(eq(applicationsTable.id, id));
+
+  if (!appWithJob) { res.status(404).json({ error: "Application details not found" }); return; }
+
   // Send automated email for specific status changes
-  if (status === "Interview" || status === "Pending" || status === "Rejected") {
+  if (["Pending", "Reviewed", "Interview", "Offered", "Rejected"].includes(status)) {
     try {
-      const subject = status === "Interview" ? "Interview Invitation - OpportuNet" : status === "Rejected" ? "Application Status Update - OpportuNet" : "Application Status Update - OpportuNet";
-      const body = status === "Interview" 
-        ? `We are pleased to inform you that your application for a position at OpportuNet has been reviewed, and we'd like to invite you for an interview. Please stay tuned for further details.`
-        : status === "Rejected"
-        ? `Thank you for your interest in OpportuNet. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time. We wish you the best in your career pursuits.`
-        : `Your application status has been updated to "Pending". We will review it shortly and get back to you with further updates.`;
+      const subject = `Application Status Updated: ${status} - OpportuNet`;
+      let body = "";
+      
+      switch(status) {
+        case "Pending":
+          body = `Hi ${appWithJob.applicantName},\n\nYour application for ${appWithJob.jobTitle || 'the position'} at ${appWithJob.company || 'our company'} is currently being processed and is under review. We will contact you once there is an update.`;
+          break;
+        case "Reviewed":
+          body = `Hi ${appWithJob.applicantName},\n\nYour application for ${appWithJob.jobTitle || 'the position'} at ${appWithJob.company || 'our company'} has been reviewed. Our team is considering your profile for the next steps.`;
+          break;
+        case "Interview":
+          body = `Hi ${appWithJob.applicantName},\n\nGreat news! You have been shortlisted for an interview for the position of ${appWithJob.jobTitle || 'the position'} at ${appWithJob.company || 'our company'}. Please wait for our HR team to reach out with the schedule.`;
+          break;
+        case "Offered":
+          body = `Hi ${appWithJob.applicantName},\n\nCongratulations! We are pleased to extend an offer for the position of ${appWithJob.jobTitle || 'the position'} at ${appWithJob.company || 'our company'}. Please check your portal or wait for a formal offer letter via email.`;
+          break;
+        case "Rejected":
+          body = `Hi ${appWithJob.applicantName},\n\nThank you for your interest in joining ${appWithJob.company || 'our company'}. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time. We wish you the best in your future endeavors.`;
+          break;
+      }
 
       await sendEmail({
-        to: updated.applicantEmail,
+        to: appWithJob.applicantEmail,
         subject,
         body,
-        applicantName: updated.applicantName,
+        applicantName: appWithJob.applicantName,
       });
-      console.log(`Automated ${status} email sent to ${updated.applicantEmail}`);
+      console.log(`Automated ${status} email sent to ${appWithJob.applicantEmail}`);
     } catch (err) {
       console.error(`Failed to send automated email:`, err);
-      // We don't fail the request here, status update is still successful
     }
   }
 

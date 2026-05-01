@@ -505,121 +505,6 @@ var require_browser = __commonJS({
   }
 });
 
-// ../../node_modules/.pnpm/has-flag@4.0.0/node_modules/has-flag/index.js
-var require_has_flag = __commonJS({
-  "../../node_modules/.pnpm/has-flag@4.0.0/node_modules/has-flag/index.js"(exports, module) {
-    "use strict";
-    module.exports = (flag, argv = process.argv) => {
-      const prefix = flag.startsWith("-") ? "" : flag.length === 1 ? "-" : "--";
-      const position = argv.indexOf(prefix + flag);
-      const terminatorPosition = argv.indexOf("--");
-      return position !== -1 && (terminatorPosition === -1 || position < terminatorPosition);
-    };
-  }
-});
-
-// ../../node_modules/.pnpm/supports-color@7.2.0/node_modules/supports-color/index.js
-var require_supports_color = __commonJS({
-  "../../node_modules/.pnpm/supports-color@7.2.0/node_modules/supports-color/index.js"(exports, module) {
-    "use strict";
-    var os = __require("os");
-    var tty = __require("tty");
-    var hasFlag = require_has_flag();
-    var { env } = process;
-    var forceColor;
-    if (hasFlag("no-color") || hasFlag("no-colors") || hasFlag("color=false") || hasFlag("color=never")) {
-      forceColor = 0;
-    } else if (hasFlag("color") || hasFlag("colors") || hasFlag("color=true") || hasFlag("color=always")) {
-      forceColor = 1;
-    }
-    if ("FORCE_COLOR" in env) {
-      if (env.FORCE_COLOR === "true") {
-        forceColor = 1;
-      } else if (env.FORCE_COLOR === "false") {
-        forceColor = 0;
-      } else {
-        forceColor = env.FORCE_COLOR.length === 0 ? 1 : Math.min(parseInt(env.FORCE_COLOR, 10), 3);
-      }
-    }
-    function translateLevel(level) {
-      if (level === 0) {
-        return false;
-      }
-      return {
-        level,
-        hasBasic: true,
-        has256: level >= 2,
-        has16m: level >= 3
-      };
-    }
-    function supportsColor(haveStream, streamIsTTY) {
-      if (forceColor === 0) {
-        return 0;
-      }
-      if (hasFlag("color=16m") || hasFlag("color=full") || hasFlag("color=truecolor")) {
-        return 3;
-      }
-      if (hasFlag("color=256")) {
-        return 2;
-      }
-      if (haveStream && !streamIsTTY && forceColor === void 0) {
-        return 0;
-      }
-      const min = forceColor || 0;
-      if (env.TERM === "dumb") {
-        return min;
-      }
-      if (process.platform === "win32") {
-        const osRelease = os.release().split(".");
-        if (Number(osRelease[0]) >= 10 && Number(osRelease[2]) >= 10586) {
-          return Number(osRelease[2]) >= 14931 ? 3 : 2;
-        }
-        return 1;
-      }
-      if ("CI" in env) {
-        if (["TRAVIS", "CIRCLECI", "APPVEYOR", "GITLAB_CI", "GITHUB_ACTIONS", "BUILDKITE"].some((sign) => sign in env) || env.CI_NAME === "codeship") {
-          return 1;
-        }
-        return min;
-      }
-      if ("TEAMCITY_VERSION" in env) {
-        return /^(9\.(0*[1-9]\d*)\.|\d{2,}\.)/.test(env.TEAMCITY_VERSION) ? 1 : 0;
-      }
-      if (env.COLORTERM === "truecolor") {
-        return 3;
-      }
-      if ("TERM_PROGRAM" in env) {
-        const version3 = parseInt((env.TERM_PROGRAM_VERSION || "").split(".")[0], 10);
-        switch (env.TERM_PROGRAM) {
-          case "iTerm.app":
-            return version3 >= 3 ? 3 : 2;
-          case "Apple_Terminal":
-            return 2;
-        }
-      }
-      if (/-256(color)?$/i.test(env.TERM)) {
-        return 2;
-      }
-      if (/^screen|^xterm|^vt100|^vt220|^rxvt|color|ansi|cygwin|linux/i.test(env.TERM)) {
-        return 1;
-      }
-      if ("COLORTERM" in env) {
-        return 1;
-      }
-      return min;
-    }
-    function getSupportLevel(stream) {
-      const level = supportsColor(stream, stream && stream.isTTY);
-      return translateLevel(level);
-    }
-    module.exports = {
-      supportsColor: getSupportLevel,
-      stdout: translateLevel(supportsColor(true, tty.isatty(1))),
-      stderr: translateLevel(supportsColor(true, tty.isatty(2)))
-    };
-  }
-});
-
 // ../../node_modules/.pnpm/debug@4.4.3/node_modules/debug/src/node.js
 var require_node = __commonJS({
   "../../node_modules/.pnpm/debug@4.4.3/node_modules/debug/src/node.js"(exports, module) {
@@ -638,7 +523,7 @@ var require_node = __commonJS({
     );
     exports.colors = [6, 2, 3, 4, 5, 1];
     try {
-      const supportsColor = require_supports_color();
+      const supportsColor = __require("supports-color");
       if (supportsColor && (supportsColor.stderr || supportsColor).level >= 2) {
         exports.colors = [
           20,
@@ -42160,10 +42045,10 @@ function pgEnumObjectWithSchema(enumName, values, schema) {
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.20.0/node_modules/drizzle-orm/subquery.js
 var Subquery = class {
   static [entityKind] = "Subquery";
-  constructor(sql3, fields, alias, isWith = false, usedTables = []) {
+  constructor(sql2, fields, alias, isWith = false, usedTables = []) {
     this._ = {
       brand: "Subquery",
-      sql: sql3,
+      sql: sql2,
       selectedFields: fields,
       alias,
       isWith,
@@ -42564,19 +42449,19 @@ function sql(strings, ...params) {
   }
   return new SQL(queryChunks);
 }
-((sql22) => {
+((sql2) => {
   function empty() {
     return new SQL([]);
   }
-  sql22.empty = empty;
+  sql2.empty = empty;
   function fromList(list) {
     return new SQL(list);
   }
-  sql22.fromList = fromList;
+  sql2.fromList = fromList;
   function raw(str) {
     return new SQL([new StringChunk(str)]);
   }
-  sql22.raw = raw;
+  sql2.raw = raw;
   function join(chunks, separator) {
     const result = [];
     for (const [i, chunk] of chunks.entries()) {
@@ -42587,24 +42472,24 @@ function sql(strings, ...params) {
     }
     return new SQL(result);
   }
-  sql22.join = join;
+  sql2.join = join;
   function identifier(value) {
     return new Name(value);
   }
-  sql22.identifier = identifier;
+  sql2.identifier = identifier;
   function placeholder2(name2) {
     return new Placeholder(name2);
   }
-  sql22.placeholder = placeholder2;
+  sql2.placeholder = placeholder2;
   function param2(value, encoder) {
     return new Param(value, encoder);
   }
-  sql22.param = param2;
+  sql2.param = param2;
 })(sql || (sql = {}));
 ((SQL2) => {
   class Aliased {
-    constructor(sql22, fieldAlias) {
-      this.sql = sql22;
+    constructor(sql2, fieldAlias) {
+      this.sql = sql2;
       this.fieldAlias = fieldAlias;
     }
     static [entityKind] = "SQL.Aliased";
@@ -45306,8 +45191,8 @@ var PgDialect = class {
       return "none";
     }
   }
-  sqlToQuery(sql22, invokeSource) {
-    return sql22.toQuery({
+  sqlToQuery(sql2, invokeSource) {
+    return sql2.toQuery({
       casing: this.casing,
       escapeName: this.escapeName,
       escapeParam: this.escapeParam,
@@ -47666,10 +47551,10 @@ var PgRelationalQuery = class extends QueryPromise {
 
 // ../../node_modules/.pnpm/drizzle-orm@0.45.2_@types+pg@8.20.0_pg@8.20.0/node_modules/drizzle-orm/pg-core/query-builders/raw.js
 var PgRaw = class extends QueryPromise {
-  constructor(execute, sql3, query, mapBatchResult) {
+  constructor(execute, sql2, query, mapBatchResult) {
     super();
     this.execute = execute;
-    this.sql = sql3;
+    this.sql = sql2;
     this.query = query;
     this.mapBatchResult = mapBatchResult;
   }
@@ -47989,8 +47874,8 @@ var NoopCache = class extends Cache {
   async onMutate(_params) {
   }
 };
-async function hashQuery(sql3, params) {
-  const dataToHash = `${sql3}-${JSON.stringify(params)}`;
+async function hashQuery(sql2, params) {
+  const dataToHash = `${sql2}-${JSON.stringify(params)}`;
   const encoder = new TextEncoder();
   const data = encoder.encode(dataToHash);
   const hashBuffer = await crypto.subtle.digest("SHA-256", data);
@@ -48123,8 +48008,8 @@ var PgSession = class {
     ).all();
   }
   /** @internal */
-  async count(sql22, token) {
-    const res = await this.execute(sql22, token);
+  async count(sql2, token) {
+    const res = await this.execute(sql2, token);
     return Number(
       res[0]["count"]
     );
@@ -48346,8 +48231,8 @@ var NodePgSession = class _NodePgSession extends PgSession {
       if (isPool) session2.client.release();
     }
   }
-  async count(sql22) {
-    const res = await this.execute(sql22);
+  async count(sql2) {
+    const res = await this.execute(sql2);
     return Number(
       res["rows"][0]["count"]
     );
@@ -48457,7 +48342,7 @@ __export(schema_exports, {
   collegeFeesTable: () => collegeFeesTable,
   collegesTable: () => collegesTable,
   examResultsTable: () => examResultsTable,
-  examsTable: () => examsTable2,
+  examsTable: () => examsTable,
   hrEmailsTable: () => hrEmailsTable,
   insertApplicationSchema: () => insertApplicationSchema,
   insertCollegeCutoffSchema: () => insertCollegeCutoffSchema,
@@ -59903,6 +59788,13 @@ var usersTable = pgTable("users", {
   provider: authProviderEnum("provider").notNull().default("email"),
   providerId: text("provider_id"),
   avatar: text("avatar"),
+  phone: text("phone"),
+  address: text("address"),
+  bio: text("bio"),
+  skills: text("skills"),
+  resumeUrl: text("resume_url"),
+  education: text("education"),
+  qualification: text("qualification"),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
 var insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
@@ -59914,7 +59806,7 @@ var studyMaterialTypeEnum = pgEnum("study_material_type", [
   "Notes",
   "Practice_Test"
 ]);
-var examsTable2 = pgTable("exams", {
+var examsTable = pgTable("exams", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   fullName: text("full_name").notNull(),
@@ -59930,7 +59822,7 @@ var examsTable2 = pgTable("exams", {
 });
 var studyMaterialsTable = pgTable("study_materials", {
   id: serial("id").primaryKey(),
-  examId: integer("exam_id").notNull().references(() => examsTable2.id),
+  examId: integer("exam_id").notNull().references(() => examsTable.id),
   title: text("title").notNull(),
   subject: text("subject").notNull(),
   type: studyMaterialTypeEnum("type").notNull(),
@@ -59938,21 +59830,23 @@ var studyMaterialsTable = pgTable("study_materials", {
   url: text("url").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull()
 });
-var insertExamSchema = createInsertSchema(examsTable2).omit({ id: true, createdAt: true });
+var insertExamSchema = createInsertSchema(examsTable).omit({ id: true, createdAt: true });
 var insertStudyMaterialSchema = createInsertSchema(studyMaterialsTable).omit({ id: true, createdAt: true });
 
 // ../../lib/db/src/schema/applications.ts
 var applicationStatusEnum = pgEnum("application_status", [
+  "Pre-Registered",
   "Pending",
   "Reviewed",
   "Interview",
   "Offered",
-  "Rejected"
+  "Rejected",
+  "Redirected"
 ]);
 var applicationsTable = pgTable("applications", {
   id: serial("id").primaryKey(),
   jobId: integer("job_id").references(() => jobsTable.id),
-  examId: integer("exam_id").references(() => examsTable2.id),
+  examId: integer("exam_id").references(() => examsTable.id),
   userId: integer("user_id").references(() => usersTable.id),
   applicantName: text("applicant_name").notNull(),
   applicantEmail: text("applicant_email").notNull(),
@@ -60055,7 +59949,7 @@ var collegeFeesTable = pgTable("college_fees", {
 var examResultsTable = pgTable("exam_results", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull().references(() => usersTable.id),
-  examId: integer("exam_id").notNull().references(() => examsTable2.id),
+  examId: integer("exam_id").notNull().references(() => examsTable.id),
   score: integer("score").notNull(),
   totalMarks: integer("total_marks").default(600),
   percentile: varchar("percentile", { length: 10 }),
@@ -60582,9 +60476,271 @@ async function sendApplicationConfirmationEmail(applicationId) {
     console.error(`Failed to send confirmation email for application ${applicationId}:`, error40);
   }
 }
+async function sendPreRegistrationConfirmationEmail(applicationId) {
+  try {
+    const [application] = await db.select({
+      id: applicationsTable.id,
+      applicantEmail: applicationsTable.applicantEmail,
+      applicantName: applicationsTable.applicantName,
+      jobTitle: jobsTable.title,
+      company: jobsTable.company,
+      startDate: jobsTable.startDate
+    }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).where(eq(applicationsTable.id, applicationId));
+    if (!application) return;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .info-box { margin: 30px 0; padding: 20px; background: #f0f9ff; border-left: 4px solid #0f172a; border-radius: 8px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+            .btn { display: inline-block; padding: 12px 24px; background: #0f172a; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Pre-Registration Confirmed</h1>
+            </div>
+            <div class="content">
+              <p>Hi <strong>${application.applicantName}</strong>,</p>
+              <p>You have successfully pre-registered for:</p>
+              <h2 style="color: #0f172a; margin: 10px 0;">${application.jobTitle}</h2>
+              <p style="color: #64748b; font-weight: 700;">@ ${application.company}</p>
+              
+              <div class="info-box">
+                <p style="margin: 0; font-weight: 700;">Application Opening Date:</p>
+                <p style="font-size: 20px; color: #0f172a; font-weight: 900;">${application.startDate ? new Date(application.startDate).toLocaleDateString() : "To be announced"}</p>
+              </div>
+
+              <p>We'll notify you as soon as the official application window opens. This pre-registration ensures you're among the first to be notified.</p>
+              
+              <p style="margin-top: 30px;">
+                You can view your pre-registrations in your dashboard.
+              </p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/applications" class="btn">View My Dashboard</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>\xA9 2026 OpportuNet Portal.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const transporter2 = createTransporter();
+    if (transporter2) {
+      await transporter2.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: application.applicantEmail,
+        subject: `Pre-Registration Confirmed: ${application.jobTitle} at ${application.company}`,
+        html
+      });
+      console.log(`Pre-registration confirmation email sent to ${application.applicantEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Pre-registration email for ${application.jobTitle} would be sent to ${application.applicantEmail}`);
+    }
+  } catch (error40) {
+    console.error(`Failed to send pre-registration email:`, error40);
+  }
+}
+async function sendJobOpeningReminderEmail(jobId, userEmail, userName) {
+  try {
+    const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, jobId));
+    if (!job) return;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .btn { display: inline-block; padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Applications Now Open!</h1>
+            </div>
+            <div class="content">
+              <p>Hi <strong>${userName}</strong>,</p>
+              <p>Good news! The application window for the position you pre-registered for is now <strong>OPEN</strong>:</p>
+              <h2 style="color: #10b981; margin: 10px 0;">${job.title}</h2>
+              <p style="color: #64748b; font-weight: 700;">@ ${job.company}</p>
+              
+              <p>You can now head over to our portal to complete your application. Don't wait too long, as positions might fill up quickly!</p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/jobs/${jobId}" class="btn">Apply Now</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>\xA9 2026 OpportuNet Portal.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const transporter2 = createTransporter();
+    if (transporter2) {
+      await transporter2.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: userEmail,
+        subject: `Now Open: Apply for ${job.title} at ${job.company}`,
+        html
+      });
+      console.log(`Job opening reminder email sent to ${userEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Job opening reminder for ${job.title} would be sent to ${userEmail}`);
+    }
+  } catch (error40) {
+    console.error(`Failed to send job opening reminder:`, error40);
+  }
+}
+async function sendJobClosingSoonEmail(jobId, userEmail, userName, isOneDayLeft = false) {
+  try {
+    const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, jobId));
+    if (!job) return;
+    const title = isOneDayLeft ? "Closing in 24 Hours!" : "Application Period Ending Soon";
+    const subject = isOneDayLeft ? `URGENT: ${job.title} applications close tomorrow!` : `Reminder: ${job.title} applications closing soon`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .btn { display: inline-block; padding: 12px 24px; background: #ef4444; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+            .timer { font-size: 18px; font-weight: bold; color: #ef4444; margin: 20px 0; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>${title}</h1>
+            </div>
+            <div class="content">
+              <p>Hi <strong>${userName}</strong>,</p>
+              <p>This is a reminder that the application window for the following position is closing soon:</p>
+              <h2 style="color: #ef4444; margin: 10px 0;">${job.title}</h2>
+              <p style="color: #64748b; font-weight: 700;">@ ${job.company}</p>
+              
+              <div class="timer">
+                Application Deadline: ${job.endDate ? new Date(job.endDate).toLocaleDateString() : "Closing soon"}
+              </div>
+
+              <p>If you haven't completed your application yet, now is the time! Make sure to submit your details before the deadline to be considered for this role.</p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/jobs/${jobId}" class="btn">Complete Application</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>\xA9 2026 OpportuNet Portal.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    const transporter2 = createTransporter();
+    if (transporter2) {
+      await transporter2.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: userEmail,
+        subject,
+        html
+      });
+      console.log(`Job closing reminder email sent to ${userEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Job closing reminder for ${job.title} would be sent to ${userEmail}`);
+    }
+  } catch (error40) {
+    console.error(`Failed to send job closing reminder:`, error40);
+  }
+}
 
 // src/routes/applications.ts
+import bcrypt from "bcrypt";
 var router3 = (0, import_express3.Router)();
+router3.post("/applications/pre-register", async (req, res) => {
+  const { name, email: email3, password, jobId } = req.body;
+  if (!email3 || !jobId) {
+    res.status(400).json({ error: "Email and Job ID are required" });
+    return;
+  }
+  try {
+    let [user] = await db.select().from(usersTable).where(eq(usersTable.email, email3));
+    if (!user && name && password) {
+      const passwordHash = await bcrypt.hash(password, 10);
+      const [newUser] = await db.insert(usersTable).values({
+        name,
+        email: email3,
+        passwordHash,
+        provider: "email",
+        role: "user"
+      }).returning();
+      user = newUser;
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.userRole = user.role;
+      }
+    }
+    const [existing] = await db.select().from(applicationsTable).where(and(eq(applicationsTable.jobId, jobId), eq(applicationsTable.applicantEmail, email3)));
+    if (existing) {
+      res.status(400).json({ error: "You are already pre-registered or applied for this job." });
+      return;
+    }
+    let finalUserId = user?.id || null;
+    if (finalUserId) {
+      const [userExists] = await db.select().from(usersTable).where(eq(usersTable.id, finalUserId));
+      if (!userExists) finalUserId = null;
+    }
+    const [app2] = await db.insert(applicationsTable).values({
+      jobId,
+      userId: finalUserId,
+      applicantName: name || user?.name || email3.split("@")[0],
+      applicantEmail: email3,
+      status: "Pre-Registered",
+      acceptedTerms: true
+    }).returning();
+    sendPreRegistrationConfirmationEmail(app2.id);
+    res.status(201).json({ success: true, applicationId: app2.id });
+  } catch (err) {
+    console.error("Pre-registration error details:", err);
+    res.status(500).json({ error: err.message || "Pre-registration failed" });
+  }
+});
 router3.use("/applications", requireAuth);
 async function getSessionUser(req) {
   if (!req.session?.userId) return null;
@@ -60609,12 +60765,14 @@ router3.get("/applications", async (req, res) => {
     status: applicationsTable.status,
     appliedAt: applicationsTable.appliedAt,
     job: jobsTable,
-    examName: examsTable2.name
-  }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).leftJoin(examsTable2, eq(applicationsTable.examId, examsTable2.id));
+    examName: examsTable.name
+  }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).leftJoin(examsTable, eq(applicationsTable.examId, examsTable.id));
   if (jobId) {
     baseQuery = baseQuery.where(eq(applicationsTable.jobId, jobId));
   } else if (!isPrivileged) {
-    baseQuery = baseQuery.where(eq(applicationsTable.applicantEmail, user.email));
+    baseQuery = baseQuery.where(
+      sql`${applicationsTable.userId} = ${user.id} OR ${applicationsTable.applicantEmail} = ${user.email}`
+    );
   }
   const apps = await baseQuery.orderBy(desc(applicationsTable.appliedAt));
   const formatted = apps.map((a) => ({
@@ -60700,11 +60858,14 @@ router3.post("/applications/track", async (req, res) => {
     res.status(404).json({ error: "Job not found" });
     return;
   }
+  const user = await getSessionUser(req);
   const [app2] = await db.insert(applicationsTable).values({
     jobId,
-    applicantName,
-    applicantEmail,
-    status: "Redirected"
+    userId: user?.id,
+    applicantName: user?.name || applicantName,
+    applicantEmail: user?.email || applicantEmail,
+    status: "Redirected",
+    acceptedTerms: true
   }).returning();
   const normalizedJob = normalizeJobRecord(job);
   sendApplicationConfirmationEmail(app2.id);
@@ -60768,13 +60929,13 @@ function normalizeExamRecord(exam) {
 // src/routes/exams.ts
 var router4 = (0, import_express4.Router)();
 router4.get("/exams", async (req, res) => {
-  const exams = await db.select().from(examsTable2);
+  const exams = await db.select().from(examsTable);
   const formatted = exams.map((e) => normalizeExamRecord(e));
   res.json(formatted);
 });
 router4.get("/exams/:id", async (req, res) => {
   const params = GetExamParams.parse({ id: parseInt(req.params.id) });
-  const [exam] = await db.select().from(examsTable2).where(eq(examsTable2.id, params.id));
+  const [exam] = await db.select().from(examsTable).where(eq(examsTable.id, params.id));
   if (!exam) {
     res.status(404).json({ error: "Exam not found" });
     return;
@@ -60793,7 +60954,7 @@ var exams_default = router4;
 
 // src/routes/auth.ts
 var import_express5 = __toESM(require_express2(), 1);
-import bcrypt from "bcrypt";
+import bcrypt2 from "bcrypt";
 var router5 = (0, import_express5.Router)();
 var registerSchema = external_exports.object({
   name: external_exports.string().min(2),
@@ -60828,7 +60989,7 @@ router5.post("/register", async (req, res) => {
       res.status(409).json({ error: "Email already registered." });
       return;
     }
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await bcrypt2.hash(password, 10);
     const role = await determineUserRole(email3);
     const [user] = await db.insert(usersTable).values({
       name,
@@ -60839,7 +61000,18 @@ router5.post("/register", async (req, res) => {
     }).returning();
     req.session.userId = user.id;
     req.session.userRole = user.role;
-    res.status(201).json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
+    res.status(201).json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      phone: user.phone,
+      address: user.address,
+      resumeUrl: user.resumeUrl,
+      education: user.education,
+      qualification: user.qualification
+    });
   } catch (err) {
     res.status(400).json({ error: err.message || "Registration failed." });
   }
@@ -60856,7 +61028,7 @@ router5.post("/login", async (req, res) => {
       res.status(401).json({ error: "This account uses social login. Please use the appropriate provider." });
       return;
     }
-    const valid = await bcrypt.compare(password, user.passwordHash);
+    const valid = await bcrypt2.compare(password, user.passwordHash);
     if (!valid) {
       res.status(401).json({ error: "Invalid email or password." });
       return;
@@ -60868,7 +61040,18 @@ router5.post("/login", async (req, res) => {
     }
     req.session.userId = user.id;
     req.session.userRole = user.role;
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      phone: user.phone,
+      address: user.address,
+      resumeUrl: user.resumeUrl,
+      education: user.education,
+      qualification: user.qualification
+    });
   } catch (err) {
     res.status(400).json({ error: err.message || "Login failed." });
   }
@@ -60896,7 +61079,42 @@ router5.get("/me", async (req, res) => {
       req.session.userRole = hrCheck;
     }
   }
-  res.json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
+  res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    avatar: user.avatar,
+    phone: user.phone,
+    address: user.address,
+    resumeUrl: user.resumeUrl,
+    education: user.education,
+    qualification: user.qualification
+  });
+});
+router5.patch("/profile", async (req, res) => {
+  if (!req.session?.userId) {
+    res.status(401).json({ error: "Not logged in." });
+    return;
+  }
+  const updateSchema = external_exports.object({
+    name: external_exports.string().min(2).optional(),
+    phone: external_exports.string().optional(),
+    address: external_exports.string().optional(),
+    bio: external_exports.string().optional(),
+    skills: external_exports.string().optional(),
+    resumeUrl: external_exports.string().optional(),
+    education: external_exports.string().optional(),
+    qualification: external_exports.string().optional(),
+    avatar: external_exports.string().optional()
+  });
+  try {
+    const updates = updateSchema.parse(req.body);
+    const [updated] = await db.update(usersTable).set(updates).where(eq(usersTable.id, req.session.userId)).returning();
+    res.json(updated);
+  } catch (err) {
+    res.status(400).json({ error: err.message || "Update failed." });
+  }
 });
 async function handleSocialLogin(req, res, ghUser, primaryEmail, provider) {
   let [user] = await db.select().from(usersTable).where(eq(usersTable.email, primaryEmail));
@@ -61047,24 +61265,61 @@ router6.get("/applications", async (req, res) => {
 router6.patch("/applications/:id/status", async (req, res) => {
   const id = parseInt(req.params.id);
   const { status } = external_exports.object({
-    status: external_exports.enum(["Pending", "Reviewed", "Interview", "Offered", "Rejected"])
+    status: external_exports.enum(["Pre-Registered", "Pending", "Reviewed", "Interview", "Offered", "Rejected"])
   }).parse(req.body);
   const [updated] = await db.update(applicationsTable).set({ status }).where(eq(applicationsTable.id, id)).returning();
   if (!updated) {
     res.status(404).json({ error: "Application not found" });
     return;
   }
-  if (status === "Interview" || status === "Pending" || status === "Rejected") {
+  const [appWithJob] = await db.select({
+    applicantName: applicationsTable.applicantName,
+    applicantEmail: applicationsTable.applicantEmail,
+    jobTitle: jobsTable.title,
+    company: jobsTable.company
+  }).from(applicationsTable).leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id)).where(eq(applicationsTable.id, id));
+  if (!appWithJob) {
+    res.status(404).json({ error: "Application details not found" });
+    return;
+  }
+  if (["Pending", "Reviewed", "Interview", "Offered", "Rejected"].includes(status)) {
     try {
-      const subject = status === "Interview" ? "Interview Invitation - OpportuNet" : status === "Rejected" ? "Application Status Update - OpportuNet" : "Application Status Update - OpportuNet";
-      const body = status === "Interview" ? `We are pleased to inform you that your application for a position at OpportuNet has been reviewed, and we'd like to invite you for an interview. Please stay tuned for further details.` : status === "Rejected" ? `Thank you for your interest in OpportuNet. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time. We wish you the best in your career pursuits.` : `Your application status has been updated to "Pending". We will review it shortly and get back to you with further updates.`;
+      const subject = `Application Status Updated: ${status} - OpportuNet`;
+      let body = "";
+      switch (status) {
+        case "Pending":
+          body = `Hi ${appWithJob.applicantName},
+
+Your application for ${appWithJob.jobTitle || "the position"} at ${appWithJob.company || "our company"} is currently being processed and is under review. We will contact you once there is an update.`;
+          break;
+        case "Reviewed":
+          body = `Hi ${appWithJob.applicantName},
+
+Your application for ${appWithJob.jobTitle || "the position"} at ${appWithJob.company || "our company"} has been reviewed. Our team is considering your profile for the next steps.`;
+          break;
+        case "Interview":
+          body = `Hi ${appWithJob.applicantName},
+
+Great news! You have been shortlisted for an interview for the position of ${appWithJob.jobTitle || "the position"} at ${appWithJob.company || "our company"}. Please wait for our HR team to reach out with the schedule.`;
+          break;
+        case "Offered":
+          body = `Hi ${appWithJob.applicantName},
+
+Congratulations! We are pleased to extend an offer for the position of ${appWithJob.jobTitle || "the position"} at ${appWithJob.company || "our company"}. Please check your portal or wait for a formal offer letter via email.`;
+          break;
+        case "Rejected":
+          body = `Hi ${appWithJob.applicantName},
+
+Thank you for your interest in joining ${appWithJob.company || "our company"}. After careful consideration, we regret to inform you that we will not be moving forward with your application at this time. We wish you the best in your future endeavors.`;
+          break;
+      }
       await sendEmail({
-        to: updated.applicantEmail,
+        to: appWithJob.applicantEmail,
         subject,
         body,
-        applicantName: updated.applicantName
+        applicantName: appWithJob.applicantName
       });
-      console.log(`Automated ${status} email sent to ${updated.applicantEmail}`);
+      console.log(`Automated ${status} email sent to ${appWithJob.applicantEmail}`);
     } catch (err) {
       console.error(`Failed to send automated email:`, err);
     }
@@ -61427,7 +61682,7 @@ app.use("/api", routes_default);
 var app_default = app;
 
 // src/index.ts
-import bcrypt2 from "bcrypt";
+import bcrypt3 from "bcrypt";
 
 // src/lib/seed-data.ts
 var IT_JOBS = [
@@ -61884,7 +62139,9 @@ var karnatakaColeges = [
     cutoffs: [
       { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 480, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" },
       { courseName: "M.Tech Electronics", category: "General", cutoffScore: 450, ugSeats: 0, pgSeats: 25, academicYear: "2024-25" },
-      { courseName: "M.Tech Civil Engineering", category: "General", cutoffScore: 420, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" }
+      { courseName: "M.Tech Civil Engineering", category: "General", cutoffScore: 420, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" },
+      { courseName: "M.Tech Mechanical", category: "General", cutoffScore: 440, ugSeats: 0, pgSeats: 22, academicYear: "2024-25" },
+      { courseName: "M.Tech Electrical", category: "General", cutoffScore: 435, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" }
     ],
     fees: [
       { courseType: "PG", courseName: "M.Tech", annualFees: "200000", totalFees: "400000", description: "2 year", academicYear: "2024-25" }
@@ -61908,7 +62165,11 @@ var karnatakaColeges = [
       { courseName: "M.Tech Computer Science", category: "General", cutoffScore: 495, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
       { courseName: "MCA", category: "General", cutoffScore: 480, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" },
       { courseName: "MBA", category: "General", cutoffScore: 470, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
-      { courseName: "M.Tech Software Engineering", category: "General", cutoffScore: 460, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" }
+      { courseName: "M.Tech Software Engineering", category: "General", cutoffScore: 460, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MBA Finance", category: "General", cutoffScore: 465, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" },
+      { courseName: "MBA Marketing", category: "General", cutoffScore: 460, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" },
+      { courseName: "MCA Data Science", category: "General", cutoffScore: 475, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" },
+      { courseName: "MCA Cloud Computing", category: "General", cutoffScore: 470, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" }
     ],
     fees: [
       { courseType: "PG", courseName: "M.Tech", annualFees: "250000", totalFees: "500000", description: "2 year", academicYear: "2024-25" },
@@ -62328,6 +62589,374 @@ var karnatakaColeges = [
     fees: [
       { courseType: "PG", courseName: "MBA", annualFees: "65000", totalFees: "130000", description: "VTU Fees", academicYear: "2024-25" }
     ]
+  },
+  {
+    name: "CMR Institute of Technology (CMRIT)",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "CMRIT",
+    affiliation: "VTU Affiliated",
+    about: "Small private college with good faculty.",
+    websiteUrl: "https://cmrit.ac.in",
+    contactEmail: "admissions@cmrit.ac.in",
+    contactPhone: "+91-80-28614444",
+    establishedYear: 2001,
+    facilities: ["Library", "Labs", "Gym"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Mechanical", category: "General", cutoffScore: 280, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" },
+      { courseName: "M.Tech Civil Engineering", category: "General", cutoffScore: 270, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MBA HR Management", category: "General", cutoffScore: 260, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "95000", totalFees: "190000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Dayananda Sagar College of Engineering (DSCE)",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "DSCE",
+    affiliation: "VTU Affiliated",
+    about: "Reputed engineering college for technical courses.",
+    websiteUrl: "https://dsce.ac.in",
+    contactEmail: "admissions@dsce.ac.in",
+    contactPhone: "+91-80-65007333",
+    establishedYear: 1979,
+    facilities: ["Modern Labs", "Library", "Cafeteria"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Electrical", category: "General", cutoffScore: 310, ugSeats: 0, pgSeats: 22, academicYear: "2024-25" },
+      { courseName: "MBA Finance", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MCA Cloud Computing", category: "General", cutoffScore: 295, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "120000", totalFees: "240000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Bangalore Institute of Management Studies (BIMS)",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "BIMS",
+    affiliation: "Private",
+    about: "Focused on management education.",
+    websiteUrl: "https://bims.ac.in",
+    contactEmail: "admissions@bims.ac.in",
+    contactPhone: "+91-80-23451111",
+    establishedYear: 1995,
+    facilities: ["Business School", "Auditorium"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MBA", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 200, academicYear: "2024-25" },
+      { courseName: "MBA Finance", category: "General", cutoffScore: 315, ugSeats: 0, pgSeats: 70, academicYear: "2024-25" },
+      { courseName: "MBA Marketing", category: "General", cutoffScore: 310, ugSeats: 0, pgSeats: 80, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MBA", annualFees: "300000", totalFees: "600000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Christ University",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "CU",
+    affiliation: "Deemed University",
+    about: "Minority institution with global standards.",
+    websiteUrl: "https://christuniversity.in",
+    contactEmail: "admissions@christuniversity.in",
+    contactPhone: "+91-80-40124000",
+    establishedYear: 1969,
+    facilities: ["International Campus", "Library", "Sports"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MCA Cyber Security", category: "General", cutoffScore: 380, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MCA Data Science", category: "General", cutoffScore: 375, ugSeats: 0, pgSeats: 45, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 370, ugSeats: 0, pgSeats: 150, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MCA", annualFees: "250000", totalFees: "500000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "JSS Institute of Technology (JSSIT)",
+    location: "Mysore",
+    city: "Mysore",
+    state: "Karnataka",
+    collegeCode: "JSSIT",
+    affiliation: "Autonomous",
+    about: "Reputed institution for technical education.",
+    websiteUrl: "https://jssit.ac.in",
+    contactEmail: "admissions@jssit.ac.in",
+    contactPhone: "+91-821-2548246",
+    establishedYear: 1994,
+    facilities: ["Research Center", "Labs"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Machine Learning", category: "General", cutoffScore: 400, ugSeats: 0, pgSeats: 25, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 390, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 380, ugSeats: 0, pgSeats: 120, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "140000", totalFees: "280000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Atria Institute of Technology",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "ATRIA",
+    affiliation: "VTU Affiliated",
+    about: "Young engineering college with modern facilities.",
+    websiteUrl: "https://atria.edu",
+    contactEmail: "admissions@atria.edu",
+    contactPhone: "+91-80-23456789",
+    establishedYear: 2e3,
+    facilities: ["Labs", "Library", "Cafeteria"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "ME Computational Science", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MBA HR Management", category: "General", cutoffScore: 310, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 305, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "85000", totalFees: "170000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Vidyavardhaka College of Engineering",
+    location: "Mysore",
+    city: "Mysore",
+    state: "Karnataka",
+    collegeCode: "VVCE",
+    affiliation: "VTU Affiliated",
+    about: "Small college with quality education.",
+    websiteUrl: "https://vvce.ac.in",
+    contactEmail: "admissions@vvce.ac.in",
+    contactPhone: "+91-821-4224300",
+    establishedYear: 1988,
+    facilities: ["Labs", "Hostel"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Civil Engineering", category: "General", cutoffScore: 280, ugSeats: 0, pgSeats: 18, academicYear: "2024-25" },
+      { courseName: "MBA Marketing", category: "General", cutoffScore: 270, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MCA Data Science", category: "General", cutoffScore: 265, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "75000", totalFees: "150000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Ramaiah University of Applied Sciences",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "RUAS",
+    affiliation: "Private University",
+    about: "Applied science focused institution.",
+    websiteUrl: "https://ruas.ac.in",
+    contactEmail: "admissions@ruas.ac.in",
+    contactPhone: "+91-80-23000111",
+    establishedYear: 2009,
+    facilities: ["Modern Campus", "Research"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "MCA Cloud Computing", category: "General", cutoffScore: 330, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MCA Cyber Security", category: "General", cutoffScore: 325, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" },
+      { courseName: "MBA HR Management", category: "General", cutoffScore: 320, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "MCA", annualFees: "200000", totalFees: "400000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Nitte University",
+    location: "Mangalore",
+    city: "Mangalore",
+    state: "Karnataka",
+    collegeCode: "NITTE",
+    affiliation: "Private University",
+    about: "Multi-discipline university in coastal Karnataka.",
+    websiteUrl: "https://nitte.edu.in",
+    contactEmail: "admissions@nitte.edu.in",
+    contactPhone: "+91-824-2208222",
+    establishedYear: 1988,
+    facilities: ["Campus", "Labs", "Library"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Mechanical", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 22, academicYear: "2024-25" },
+      { courseName: "MBA Finance", category: "General", cutoffScore: 290, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 285, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "110000", totalFees: "220000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Visvesvaraya Technological University (VTU) Regional Center",
+    location: "Belgaum",
+    city: "Belgaum",
+    state: "Karnataka",
+    collegeCode: "VTU",
+    affiliation: "State University",
+    about: "Autonomous university regulating technical education.",
+    websiteUrl: "https://vtu.ac.in",
+    contactEmail: "registrar@belgaum.vtu.ac.in",
+    contactPhone: "+91-831-2446400",
+    establishedYear: 1998,
+    facilities: ["Headquarters", "Library"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Electrical", category: "General", cutoffScore: 290, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 280, ugSeats: 0, pgSeats: 100, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 275, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "30000", totalFees: "60000", description: "VTU Fees", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Acharya Institute of Technology",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "AIT",
+    affiliation: "VTU Affiliated",
+    about: "Technology-focused institution.",
+    websiteUrl: "https://acharya.ac.in",
+    contactEmail: "admissions@acharya.ac.in",
+    contactPhone: "+91-80-23707799",
+    establishedYear: 1999,
+    facilities: ["Labs", "Placement Cell"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Machine Learning", category: "General", cutoffScore: 350, ugSeats: 0, pgSeats: 25, academicYear: "2024-25" },
+      { courseName: "MCA Data Science", category: "General", cutoffScore: 340, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MBA", category: "General", cutoffScore: 330, ugSeats: 0, pgSeats: 100, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "100000", totalFees: "200000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Bapuji Institute of Engineering & Technology",
+    location: "Davangere",
+    city: "Davangere",
+    state: "Karnataka",
+    collegeCode: "BIET",
+    affiliation: "Autonomous",
+    about: "Autonomous engineering institution.",
+    websiteUrl: "https://biet.ac.in",
+    contactEmail: "admissions@biet.ac.in",
+    contactPhone: "+91-8192-220202",
+    establishedYear: 1980,
+    facilities: ["Research", "Labs"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Mechanical", category: "General", cutoffScore: 310, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" },
+      { courseName: "MBA Marketing", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 80, academicYear: "2024-25" },
+      { courseName: "MCA Cloud Computing", category: "General", cutoffScore: 295, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "95000", totalFees: "190000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Shri Jayachamarajendra College of Engineering",
+    location: "Mysore",
+    city: "Mysore",
+    state: "Karnataka",
+    collegeCode: "SJCE",
+    affiliation: "Autonomous",
+    about: "Ancient autonomous engineering college.",
+    websiteUrl: "https://sjce.ac.in",
+    contactEmail: "admissions@sjce.ac.in",
+    contactPhone: "+91-821-2542006",
+    establishedYear: 1916,
+    facilities: ["Heritage", "Labs", "Library"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Civil Engineering", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" },
+      { courseName: "MBA HR Management", category: "General", cutoffScore: 290, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MCA Cyber Security", category: "General", cutoffScore: 285, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "80000", totalFees: "160000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Rajarajeswari College of Engineering",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "RRCE",
+    affiliation: "VTU Affiliated",
+    about: "Women empowerment through technical education.",
+    websiteUrl: "https://rrce.org",
+    contactEmail: "admissions@rrce.org",
+    contactPhone: "+91-80-28615000",
+    establishedYear: 1997,
+    facilities: ["Labs", "Placement Cell"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Electrical", category: "General", cutoffScore: 300, ugSeats: 0, pgSeats: 20, academicYear: "2024-25" },
+      { courseName: "MB A Finance", category: "General", cutoffScore: 290, ugSeats: 0, pgSeats: 60, academicYear: "2024-25" },
+      { courseName: "MCA Data Science", category: "General", cutoffScore: 285, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "90000", totalFees: "180000", description: "2 year", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "Canara Engineering College",
+    location: "Bantwal, Mangalore",
+    city: "Mangalore",
+    state: "Karnataka",
+    collegeCode: "CEC",
+    affiliation: "VTU Affiliated",
+    about: "Small private engineering college.",
+    websiteUrl: "https://cec.ac.in",
+    contactEmail: "admissions@cec.ac.in",
+    contactPhone: "+91-8256-227228",
+    establishedYear: 1992,
+    facilities: ["Labs", "Hostel"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "ME Computational Science", category: "General", cutoffScore: 260, ugSeats: 0, pgSeats: 15, academicYear: "2024-25" },
+      { courseName: "MBA Marketing", category: "General", cutoffScore: 250, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MCA", category: "General", cutoffScore: 245, ugSeats: 0, pgSeats: 40, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "70000", totalFees: "140000", description: "VTU Fees", academicYear: "2024-25" }
+    ]
+  },
+  {
+    name: "PESIT Bangalore South Campus",
+    location: "Bangalore",
+    city: "Bangalore",
+    state: "Karnataka",
+    collegeCode: "PESIT-BS",
+    affiliation: "Private",
+    about: "PESIT satellite campus.",
+    websiteUrl: "https://pesit.ac.in",
+    contactEmail: "admissions@pesit.ac.in",
+    contactPhone: "+91-80-68120111",
+    establishedYear: 2007,
+    facilities: ["Modern Labs", "Library"],
+    qualification: "Bachelor's with 50%",
+    cutoffs: [
+      { courseName: "M.Tech Machine Learning", category: "General", cutoffScore: 380, ugSeats: 0, pgSeats: 30, academicYear: "2024-25" },
+      { courseName: "MCA Cloud Computing", category: "General", cutoffScore: 370, ugSeats: 0, pgSeats: 50, academicYear: "2024-25" },
+      { courseName: "MBA HR Management", category: "General", cutoffScore: 360, ugSeats: 0, pgSeats: 70, academicYear: "2024-25" }
+    ],
+    fees: [
+      { courseType: "PG", courseName: "M.Tech", annualFees: "180000", totalFees: "360000", description: "2 year", academicYear: "2024-25" }
+    ]
   }
 ];
 
@@ -62502,6 +63131,46 @@ function setupCronJobs() {
       logger.error(error40, "Failed to run daily job openings task");
     }
   });
+  import_node_cron.default.schedule("0 6 * * *", async () => {
+    logger.info("Checking for jobs opening today...");
+    try {
+      const today = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const openingJobs = await db.select().from(jobsTable).where(eq(jobsTable.startDate, today));
+      for (const job of openingJobs) {
+        const preRegistered = await db.select({
+          email: applicationsTable.applicantEmail,
+          name: applicationsTable.applicantName
+        }).from(applicationsTable).where(and(eq(applicationsTable.jobId, job.id), eq(applicationsTable.status, "Pre-Registered")));
+        for (const user of preRegistered) {
+          await sendJobOpeningReminderEmail(job.id, user.email, user.name);
+        }
+      }
+    } catch (error40) {
+      logger.error(error40, "Failed to run job opening notifications task");
+    }
+  });
+  import_node_cron.default.schedule("0 10 * * *", async () => {
+    logger.info("Checking for jobs closing soon...");
+    try {
+      const tomorrow = /* @__PURE__ */ new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split("T")[0];
+      const todayStr = (/* @__PURE__ */ new Date()).toISOString().split("T")[0];
+      const closingTomorrow = await db.select().from(jobsTable).where(eq(jobsTable.endDate, tomorrowStr));
+      const closingToday = await db.select().from(jobsTable).where(eq(jobsTable.endDate, todayStr));
+      const users = await db.select().from(usersTable);
+      for (const user of users) {
+        for (const job of closingTomorrow) {
+          await sendJobClosingSoonEmail(job.id, user.email, user.name, true);
+        }
+        for (const job of closingToday) {
+          await sendJobClosingSoonEmail(job.id, user.email, user.name, false);
+        }
+      }
+    } catch (error40) {
+      logger.error(error40, "Failed to run job closing notifications task");
+    }
+  });
   logger.info("Cron jobs initialized successfully");
 }
 
@@ -62536,7 +63205,7 @@ async function ensureAdminUser() {
   const adminEmail = "admin@govportal.com";
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, adminEmail));
   if (!existing) {
-    const passwordHash = await bcrypt2.hash("Admin@123", 10);
+    const passwordHash = await bcrypt3.hash("Admin@123", 10);
     await db.insert(usersTable).values({
       name: "GovPortal Admin",
       email: adminEmail,
@@ -62549,7 +63218,7 @@ async function ensureAdminUser() {
 }
 async function autoSeed() {
   const [jobsCount] = await db.select({ count: count() }).from(jobsTable);
-  const [examsCount] = await db.select({ count: count() }).from(examsTable2);
+  const [examsCount] = await db.select({ count: count() }).from(examsTable);
   if (jobsCount.count === 0) {
     logger.info("Jobs table is empty \u2014 seeding live jobs...");
     const allJobs = [
@@ -62567,7 +63236,7 @@ async function autoSeed() {
   }
   if (examsCount.count === 0) {
     logger.info("Exams table is empty \u2014 seeding exams and materials...");
-    const exams = await db.insert(examsTable2).values([
+    const exams = await db.insert(examsTable).values([
       // ... (rest of the exams insertion from the original file)
       {
         name: "Karnataka PGCET 2026",

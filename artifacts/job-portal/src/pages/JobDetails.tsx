@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRoute } from "wouter";
+import { motion } from "framer-motion";
 import { 
   useGetJob, 
   useGetJobApplicantCount, 
@@ -8,7 +9,7 @@ import {
 import { 
   Building2, MapPin, Clock, IndianRupee, 
   Calendar, CheckCircle2, Users, AlertCircle, 
-  Loader2, ArrowLeft, Mail, BookOpen, ListChecks, Briefcase, ExternalLink, Send, X, GraduationCap
+  Loader2, ArrowLeft, Mail, BookOpen, ListChecks, Briefcase, ExternalLink, Send, X, GraduationCap, Sparkles
 } from "lucide-react";
 import { formatDate, cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -53,6 +54,40 @@ export default function JobDetails() {
   const steps = job?.applicationGuide?.split("\n").filter(s => s.trim()) ?? [];
   const externalApplyUrl = job?.official_url || job?.applicationLink || "";
 
+  const handleOneClickApply = async () => {
+    if (!user || !user.resumeUrl) return;
+    setIsRedirecting(true);
+    try {
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId,
+          applicantName: user.name,
+          applicantEmail: user.email,
+          applicantPhone: user.phone || "Not Provided",
+          applicantAddress: user.address || "Not Provided",
+          education: user.education || "Not Specified",
+          qualification: user.qualification || "Not Specified",
+          resumeUrl: user.resumeUrl,
+          acceptedTerms: true,
+        }),
+      });
+
+      if (response.ok) {
+        setHasApplied(true);
+        toast({ title: "Success!", description: "Fast Apply complete! Your profile was sent." });
+      } else {
+        const err = await response.json();
+        throw new Error(err.error || "Fast Apply failed");
+      }
+    } catch (error: any) {
+      toast({ title: "Apply Failed", description: error.message, variant: "destructive" });
+    } finally {
+      setIsRedirecting(false);
+    }
+  };
+
   if (isJobLoading) {
     return <div className="flex justify-center py-32"><Loader2 className="w-12 h-12 animate-spin text-primary" /></div>;
   }
@@ -60,9 +95,16 @@ export default function JobDetails() {
     return <div className="text-center py-32 text-xl font-bold">Job not found.</div>;
   }
 
+  const hasResume = !!user?.resumeUrl;
+
   return (
     <>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-5xl mx-auto space-y-6"
+      >
       <Link href="/jobs" className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-foreground transition-colors gap-1">
         <ArrowLeft className="w-4 h-4" /> Back to Jobs
       </Link>
@@ -106,40 +148,88 @@ export default function JobDetails() {
           
           <div className="flex flex-col gap-3 w-full md:w-auto shrink-0">
             {hasApplied && (
-               <div className="w-full md:w-60 bg-emerald-50 border-2 border-emerald-500 rounded-xl p-4 text-center animate-in zoom-in-95 duration-500 shadow-lg shadow-emerald-200">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto mb-2" />
+               <div className="w-full md:w-64 bg-emerald-50 border-2 border-emerald-500 rounded-xl p-4 text-center animate-in zoom-in-95 duration-500 shadow-lg shadow-emerald-200">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-1" />
                   <p className="text-emerald-700 font-bold">Applied Successfully!</p>
-                  <p className="text-emerald-600 text-xs mt-1">HR will be notified shortly.</p>
+                  <p className="text-emerald-600 text-[10px] mt-1">HR will be notified shortly.</p>
                </div>
             )}
-            {!hasApplied && !externalApplyUrl && (
+            {!hasApplied && (
                user ? (
-                 <Link 
-                   href={`/jobs/${jobId}/apply`}
-                   className={`w-full md:w-60 px-6 py-4 rounded-xl font-bold text-lg text-center transition-all duration-300 flex items-center justify-center gap-2 ${
-                     canApply
-                       ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:-translate-y-1'
-                       : 'bg-muted text-muted-foreground cursor-not-allowed'
-                   }`}
-                 >
-                   <Send className="w-4 h-4" /> {canApply ? 'Apply Now' : 'Application Closed'}
-                 </Link>
+                 hasResume ? (
+                   <button 
+                     onClick={handleOneClickApply}
+                     disabled={isRedirecting || !canApply}
+                     className={`w-full md:w-64 px-6 py-4 rounded-xl font-black text-lg text-center transition-all duration-300 flex items-center justify-center gap-2 border-2 border-primary ${
+                       canApply
+                         ? 'bg-primary text-white shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95'
+                         : 'bg-muted text-muted-foreground cursor-not-allowed border-transparent'
+                     }`}
+                   >
+                     {isRedirecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Sparkles className="w-5 h-5" /> Fast Apply Now</>}
+                   </button>
+                 ) : (
+                   <Link 
+                     href={`/jobs/${jobId}/apply`}
+                     className={`w-full md:w-64 px-6 py-4 rounded-xl font-bold text-lg text-center transition-all duration-300 flex items-center justify-center gap-2 ${
+                       canApply
+                         ? 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:-translate-y-1'
+                         : 'bg-muted text-muted-foreground cursor-not-allowed'
+                     }`}
+                   >
+                     <Send className="w-4 h-4" /> {canApply ? 'Complete Profile & Apply' : 'Application Closed'}
+                   </Link>
+                 )
                ) : (
                  <Link 
                    href="/login"
-                   className="w-full md:w-60 px-6 py-4 rounded-xl font-bold text-lg text-center bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
+                   className="w-full md:w-64 px-6 py-4 rounded-xl font-bold text-lg text-center bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/30 hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-2"
                  >
                    <Send className="w-4 h-4" /> Sign In to Apply
                  </Link>
                )
             )}
+            
             {!hasApplied && externalApplyUrl && (
-               <button
-                 onClick={() => setShowRedirectModal(true)}
-                 className="w-full md:w-60 px-6 py-3 rounded-xl font-bold bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors border border-border flex items-center justify-center gap-2"
-               >
-                 <ExternalLink className="w-4 h-4" /> Apply on Official Portal
-               </button>
+               <div className="space-y-2">
+                 <button
+                   onClick={async () => {
+                     if (!user) {
+                       toast({ 
+                         title: "Login Required", 
+                         description: "Please sign in to track this application in your dashboard.",
+                         variant: "destructive"
+                       });
+                       window.open(externalApplyUrl, "_blank");
+                       return;
+                     }
+                     setIsRedirecting(true);
+                     try {
+                       await fetch("/api/applications/track", {
+                         method: "POST",
+                         headers: { "Content-Type": "application/json" },
+                         body: JSON.stringify({ jobId, applicantName: user.name, applicantEmail: user.email }),
+                       });
+                       setHasApplied(true);
+                       toast({ title: "Tracked!", description: "This visit has been recorded in your applications." });
+                     } catch (error) {
+                       console.error("Tracking failed", error);
+                     } finally {
+                       setIsRedirecting(false);
+                       window.open(externalApplyUrl, "_blank");
+                     }
+                   }}
+                   disabled={isRedirecting}
+                   className="w-full md:w-64 px-6 py-4 rounded-xl font-black text-lg bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all border-2 border-border/50 flex items-center justify-center gap-2 shadow-lg"
+                 >
+                   {isRedirecting ? <Loader2 className="w-5 h-5 animate-spin" /> : <><ExternalLink className="w-5 h-5" /> Official Portal</>}
+                 </button>
+                 {!user && (
+                   <p className="text-[10px] text-center text-muted-foreground font-bold uppercase tracking-wider">
+                     Sign in to record this application
+                   </p>
+                 )}
+               </div>
             )}
             {!hasApplied && (
                <>
@@ -165,12 +255,24 @@ export default function JobDetails() {
                  <Users className="w-4 h-4" /> View More Applicants
                </Link>
             )}
-            <a 
-              href={`mailto:${job.hrEmail}`}
-              className="w-full md:w-60 px-6 py-3 rounded-xl font-semibold bg-card text-muted-foreground hover:bg-secondary flex items-center justify-center gap-2 transition-colors text-sm border border-border"
-            >
-              <Mail className="w-4 h-4 text-primary" /> Email HR
-            </a>
+            <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-60">
+              <a 
+                href={`mailto:${job.hrEmail}`}
+                className="flex-1 px-6 py-3 rounded-xl font-semibold bg-card text-muted-foreground hover:bg-secondary flex items-center justify-center gap-2 transition-colors text-sm border border-border"
+              >
+                <Mail className="w-4 h-4 text-primary" /> Email HR
+              </a>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(job.hrEmail);
+                  toast({ title: "Copied!", description: "HR Email copied to clipboard." });
+                }}
+                className="p-3 rounded-xl bg-card text-muted-foreground hover:bg-secondary border border-border transition-colors"
+                title="Copy Email"
+              >
+                <Sparkles className="w-4 h-4 text-primary" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -333,40 +435,39 @@ export default function JobDetails() {
             <h2 className="text-xl font-display font-bold mb-6 flex items-center gap-2">
               <ListChecks className="w-5 h-5 text-primary" /> How to Apply - Step by Step Guide
             </h2>
-            <div className="space-y-3">
+            <div className="space-y-4">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-4 px-1">Check off steps as you complete them:</p>
               {steps.length > 0 ? (
                 steps.map((step, i) => (
-                  <div key={i} className="flex gap-3 items-start bg-secondary/30 p-4 rounded-lg">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">
-                      {i + 1}
+                  <label key={i} className="flex gap-4 items-start bg-secondary/20 p-5 rounded-2xl border border-transparent hover:border-primary/20 hover:bg-secondary/40 transition-all cursor-pointer group">
+                    <div className="relative flex items-center mt-1">
+                      <input type="checkbox" className="w-5 h-5 rounded-md border-2 border-primary/30 checked:bg-primary accent-primary transition-all cursor-pointer" />
                     </div>
-                    <p className="text-sm text-muted-foreground leading-relaxed pt-1">
-                      {step.replace(/^Step \d+:\s*/i, "")}
-                    </p>
-                  </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black text-primary uppercase tracking-tighter">Step {i + 1}</span>
+                      <p className="text-sm text-foreground font-medium leading-relaxed group-has-[:checked]:text-muted-foreground group-has-[:checked]:line-through transition-all">
+                        {step.replace(/^Step \d+:\s*/i, "")}
+                      </p>
+                    </div>
+                  </label>
                 ))
               ) : (
                 <div className="space-y-3">
-                  <div className="flex gap-3 items-start bg-secondary/30 p-4 rounded-lg">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">1</div>
-                    <p className="text-sm text-muted-foreground leading-relaxed pt-1">Visit the official portal link or use the "Apply in Portal" button below</p>
-                  </div>
-                  <div className="flex gap-3 items-start bg-secondary/30 p-4 rounded-lg">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">2</div>
-                    <p className="text-sm text-muted-foreground leading-relaxed pt-1">Click on "Apply Now" or create your account if you're a new user</p>
-                  </div>
-                  <div className="flex gap-3 items-start bg-secondary/30 p-4 rounded-lg">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">3</div>
-                    <p className="text-sm text-muted-foreground leading-relaxed pt-1">Fill in the application form with accurate details</p>
-                  </div>
-                  <div className="flex gap-3 items-start bg-secondary/30 p-4 rounded-lg">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">4</div>
-                    <p className="text-sm text-muted-foreground leading-relaxed pt-1">Upload required documents and certificate copies</p>
-                  </div>
-                  <div className="flex gap-3 items-start bg-secondary/30 p-4 rounded-lg">
-                    <div className="w-7 h-7 rounded-full bg-primary text-white flex items-center justify-center text-xs font-bold shrink-0">5</div>
-                    <p className="text-sm text-muted-foreground leading-relaxed pt-1">Review and submit your application before the deadline</p>
-                  </div>
+                  {[
+                    "Visit the official portal link or use the 'Official Portal' button",
+                    "Click on 'Apply Now' or create your account if you're a new user",
+                    "Fill in the application form with accurate details",
+                    "Upload required documents and certificate copies",
+                    "Review and submit your application before the deadline"
+                  ].map((step, i) => (
+                    <label key={i} className="flex gap-4 items-start bg-secondary/20 p-4 rounded-xl border border-transparent hover:border-primary/20 transition-all cursor-pointer group">
+                       <input type="checkbox" className="w-5 h-5 mt-1 rounded-md border-2 border-primary/30 checked:bg-primary accent-primary transition-all cursor-pointer" />
+                       <div className="space-y-1">
+                         <span className="text-[10px] font-black text-primary uppercase tracking-tighter">Step {i + 1}</span>
+                         <p className="text-sm text-foreground font-medium leading-relaxed group-has-[:checked]:text-muted-foreground group-has-[:checked]:line-through transition-all">{step}</p>
+                       </div>
+                    </label>
+                  ))}
                 </div>
               )}
             </div>
@@ -453,114 +554,7 @@ export default function JobDetails() {
         </div>
       </div>
 
-      {/* Redirect / Application Guide Modal */}
-      {showRedirectModal && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
-          <div className="relative w-full max-w-2xl bg-card rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-primary/20">
-            <button 
-              onClick={() => setShowRedirectModal(false)}
-              className="absolute top-6 right-6 p-2 rounded-full bg-secondary/50 hover:bg-secondary text-foreground transition-colors z-10"
-            >
-              <X className="w-6 h-6" />
-            </button>
-            
-            <div className="p-8 md:p-12">
-              <div className="space-y-6">
-                <div className="space-y-2 text-center">
-                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-primary">
-                    <Briefcase className="w-8 h-8" />
-                  </div>
-                  <h3 className="text-3xl font-display font-black text-foreground">Official Application</h3>
-                  <p className="text-muted-foreground font-medium">You are applying for <span className="text-primary font-bold">{job.title}</span> at <span className="font-bold">{job.company}</span>.</p>
-                </div>
-
-                <div className="bg-primary/5 rounded-[2rem] p-6 border border-primary/10">
-                    <h4 className="text-sm font-black uppercase tracking-widest text-primary mb-4 flex items-center gap-2">
-                    <ListChecks className="w-4 h-4" /> Official Application Checklist
-                  </h4>
-                  <div className="space-y-4">
-                    <div className="flex gap-4 p-3 bg-white/50 rounded-xl border border-primary/5">
-                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black shrink-0">1</div>
-                      <div>
-                        <p className="text-sm text-foreground font-bold">Verify Job Details</p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">Ensure you are applying for <span className="font-bold text-primary">{job.title}</span>.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 p-3 bg-white/50 rounded-xl border border-primary/5">
-                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black shrink-0">2</div>
-                      <div>
-                        <p className="text-sm text-foreground font-bold">Official Site Verification</p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">This link leads to the <span className="font-bold text-emerald-600">verified career portal</span> of {job.company}.</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 p-3 bg-white/50 rounded-xl border border-primary/5">
-                      <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black shrink-0">3</div>
-                      <div>
-                        <p className="text-sm text-foreground font-bold">Reference Number</p>
-                        <p className="text-[11px] text-muted-foreground leading-relaxed">Use Reference ID <span className="font-mono font-bold bg-secondary px-1.5 py-0.5 rounded text-primary">OPP-{jobId.toString().padStart(4, '0')}</span> if asked.</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-blue-50/50 rounded-2xl p-5 border border-blue-100">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-700 mb-2">Checklist</h4>
-                    <ul className="text-xs text-blue-900 space-y-2 font-medium">
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-blue-600" /> Updated Resume (PDF)
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-blue-600" /> Portfolio / LinkedIn Link
-                      </li>
-                      <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3 h-3 text-blue-600" /> Academic Certificates
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="bg-purple-50/50 rounded-2xl p-5 border border-purple-100">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-purple-700 mb-2">HR Tip</h4>
-                    <p className="text-xs text-purple-900 leading-relaxed font-medium">
-                      Ensure your contact details match your OpportuNet profile for faster tracking by the recruitment team.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-4 flex flex-col gap-3">
-                  <button 
-                    disabled={isRedirecting}
-                    onClick={async () => {
-                      if (user) {
-                        setIsRedirecting(true);
-                        try {
-                          await fetch("/api/applications/track", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ jobId, applicantName: user.name, applicantEmail: user.email }),
-                          });
-                        } catch (error) {
-                          console.error("Failed to track application redirect", error);
-                        }
-                        setIsRedirecting(false);
-                      }
-                      window.open(externalApplyUrl, "_blank");
-                      setShowRedirectModal(false);
-                      setHasApplied(true);
-                    }}
-                    className="w-full py-4 bg-primary text-white rounded-2xl font-black text-center shadow-xl shadow-primary/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
-                  >
-                    {isRedirecting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Go to Company Career Portal"} <ExternalLink className="w-5 h-5" />
-                  </button>
-                  <p className="text-[10px] text-center text-muted-foreground">
-                    You are now leaving OpportuNet to apply on the official company website.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    </motion.div>
     </>
   );
 }

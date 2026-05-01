@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 import { db } from "@workspace/db";
-import { usersTable, applicationsTable, jobsTable } from "@workspace/db/schema";
+import { usersTable, applicationsTable, jobsTable, examsTable } from "@workspace/db/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail } from "./mailer";
 
@@ -489,6 +489,234 @@ export async function sendApplicationConfirmationEmail(applicationId: number) {
     }
   } catch (error) {
     console.error(`Failed to send confirmation email for application ${applicationId}:`, error);
+  }
+}
+
+export async function sendPreRegistrationConfirmationEmail(applicationId: number) {
+  try {
+    const [application] = await db
+      .select({
+        id: applicationsTable.id,
+        applicantEmail: applicationsTable.applicantEmail,
+        applicantName: applicationsTable.applicantName,
+        jobTitle: jobsTable.title,
+        company: jobsTable.company,
+        startDate: jobsTable.startDate,
+      })
+      .from(applicationsTable)
+      .leftJoin(jobsTable, eq(applicationsTable.jobId, jobsTable.id))
+      .where(eq(applicationsTable.id, applicationId));
+
+    if (!application) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .info-box { margin: 30px 0; padding: 20px; background: #f0f9ff; border-left: 4px solid #0f172a; border-radius: 8px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+            .btn { display: inline-block; padding: 12px 24px; background: #0f172a; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Pre-Registration Confirmed</h1>
+            </div>
+            <div class="content">
+              <p>Hi <strong>${application.applicantName}</strong>,</p>
+              <p>You have successfully pre-registered for:</p>
+              <h2 style="color: #0f172a; margin: 10px 0;">${application.jobTitle}</h2>
+              <p style="color: #64748b; font-weight: 700;">@ ${application.company}</p>
+              
+              <div class="info-box">
+                <p style="margin: 0; font-weight: 700;">Application Opening Date:</p>
+                <p style="font-size: 20px; color: #0f172a; font-weight: 900;">${application.startDate ? new Date(application.startDate).toLocaleDateString() : 'To be announced'}</p>
+              </div>
+
+              <p>We'll notify you as soon as the official application window opens. This pre-registration ensures you're among the first to be notified.</p>
+              
+              <p style="margin-top: 30px;">
+                You can view your pre-registrations in your dashboard.
+              </p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/applications" class="btn">View My Dashboard</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>© 2026 OpportuNet Portal.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const transporter = createTransporter();
+    if (transporter) {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: application.applicantEmail,
+        subject: `Pre-Registration Confirmed: ${application.jobTitle} at ${application.company}`,
+        html,
+      });
+      console.log(`Pre-registration confirmation email sent to ${application.applicantEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Pre-registration email for ${application.jobTitle} would be sent to ${application.applicantEmail}`);
+    }
+  } catch (error) {
+    console.error(`Failed to send pre-registration email:`, error);
+  }
+}
+
+export async function sendJobOpeningReminderEmail(jobId: number, userEmail: string, userName: string) {
+  try {
+    const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, jobId));
+    if (!job) return;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .btn { display: inline-block; padding: 12px 24px; background: #10b981; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>Applications Now Open!</h1>
+            </div>
+            <div class="content">
+              <p>Hi <strong>${userName}</strong>,</p>
+              <p>Good news! The application window for the position you pre-registered for is now <strong>OPEN</strong>:</p>
+              <h2 style="color: #10b981; margin: 10px 0;">${job.title}</h2>
+              <p style="color: #64748b; font-weight: 700;">@ ${job.company}</p>
+              
+              <p>You can now head over to our portal to complete your application. Don't wait too long, as positions might fill up quickly!</p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/jobs/${jobId}" class="btn">Apply Now</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>© 2026 OpportuNet Portal.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const transporter = createTransporter();
+    if (transporter) {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: userEmail,
+        subject: `Now Open: Apply for ${job.title} at ${job.company}`,
+        html,
+      });
+      console.log(`Job opening reminder email sent to ${userEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Job opening reminder for ${job.title} would be sent to ${userEmail}`);
+    }
+  } catch (error) {
+    console.error(`Failed to send job opening reminder:`, error);
+  }
+}
+
+export async function sendJobClosingSoonEmail(jobId: number, userEmail: string, userName: string, isOneDayLeft: boolean = false) {
+  try {
+    const [job] = await db.select().from(jobsTable).where(eq(jobsTable.id, jobId));
+    if (!job) return;
+
+    const title = isOneDayLeft ? "Closing in 24 Hours!" : "Application Period Ending Soon";
+    const subject = isOneDayLeft ? `URGENT: ${job.title} applications close tomorrow!` : `Reminder: ${job.title} applications closing soon`;
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <style>
+            body { font-family: Arial, sans-serif; color: #333; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; background-color: #f9fafb; padding: 20px; border-radius: 12px; }
+            .header { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; padding: 40px 30px; border-radius: 12px 12px 0 0; text-align: center; }
+            .header h1 { margin: 0; font-size: 24px; font-weight: 800; }
+            .content { background: white; padding: 40px; border-radius: 0 0 12px 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            .btn { display: inline-block; padding: 12px 24px; background: #ef4444; color: white; text-decoration: none; border-radius: 8px; font-weight: 700; margin-top: 20px; }
+            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #94a3b8; }
+            .timer { font-size: 18px; font-weight: bold; color: #ef4444; margin: 20px 0; text-align: center; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <h1>${title}</h1>
+            </div>
+            <div class="content">
+              <p>Hi <strong>${userName}</strong>,</p>
+              <p>This is a reminder that the application window for the following position is closing soon:</p>
+              <h2 style="color: #ef4444; margin: 10px 0;">${job.title}</h2>
+              <p style="color: #64748b; font-weight: 700;">@ ${job.company}</p>
+              
+              <div class="timer">
+                Application Deadline: ${job.endDate ? new Date(job.endDate).toLocaleDateString() : 'Closing soon'}
+              </div>
+
+              <p>If you haven't completed your application yet, now is the time! Make sure to submit your details before the deadline to be considered for this role.</p>
+              
+              <div style="text-align: center;">
+                <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/jobs/${jobId}" class="btn">Complete Application</a>
+              </div>
+
+              <p style="margin-top: 40px; border-top: 1px solid #e2e8f0; padding-top: 20px; font-size: 14px;">
+                Best regards,<br/>
+                <strong>The OpportuNet Team</strong>
+              </p>
+            </div>
+            <div class="footer">
+              <p>© 2026 OpportuNet Portal.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const transporter = createTransporter();
+    if (transporter) {
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM || "OpportuNet <noreply@opportunet.com>",
+        to: userEmail,
+        subject,
+        html,
+      });
+      console.log(`Job closing reminder email sent to ${userEmail}`);
+    } else {
+      console.log(`[SIMULATED EMAIL] Job closing reminder for ${job.title} would be sent to ${userEmail}`);
+    }
+  } catch (error) {
+    console.error(`Failed to send job closing reminder:`, error);
   }
 }
 

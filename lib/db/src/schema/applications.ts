@@ -6,11 +6,13 @@ import { usersTable } from "./users";
 import { examsTable } from "./exams";
 
 export const applicationStatusEnum = pgEnum("application_status", [
+  "Pre-Registered",
   "Pending",
   "Reviewed",
   "Interview",
   "Offered",
   "Rejected",
+  "Redirected",
 ]);
 
 export const applicationsTable = pgTable("applications", {

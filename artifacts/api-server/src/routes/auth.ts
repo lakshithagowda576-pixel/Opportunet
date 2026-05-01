@@ -53,7 +53,18 @@ router.post("/register", async (req, res) => {
     }).returning();
     req.session!.userId = user.id;
     req.session!.userRole = user.role;
-    res.status(201).json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
+    res.status(201).json({ 
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role, 
+      avatar: user.avatar,
+      phone: user.phone,
+      address: user.address,
+      resumeUrl: user.resumeUrl,
+      education: user.education,
+      qualification: user.qualification
+    });
   } catch (err: any) {
     res.status(400).json({ error: err.message || "Registration failed." });
   }
@@ -87,7 +98,18 @@ router.post("/login", async (req, res) => {
     
     req.session!.userId = user.id;
     req.session!.userRole = user.role;
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
+    res.json({ 
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role, 
+      avatar: user.avatar,
+      phone: user.phone,
+      address: user.address,
+      resumeUrl: user.resumeUrl,
+      education: user.education,
+      qualification: user.qualification
+    });
   } catch (err: any) {
     res.status(400).json({ error: err.message || "Login failed." });
   }
@@ -121,7 +143,50 @@ router.get("/me", async (req, res) => {
      }
   }
 
-  res.json({ id: user.id, name: user.name, email: user.email, role: user.role, avatar: user.avatar });
+  res.json({ 
+    id: user.id, 
+    name: user.name, 
+    email: user.email, 
+    role: user.role, 
+    avatar: user.avatar,
+    phone: user.phone,
+    address: user.address,
+    resumeUrl: user.resumeUrl,
+    education: user.education,
+    qualification: user.qualification
+  });
+});
+
+// Update Profile
+router.patch("/profile", async (req, res) => {
+  if (!req.session?.userId) {
+    res.status(401).json({ error: "Not logged in." });
+    return;
+  }
+  
+  const updateSchema = z.object({
+    name: z.string().min(2).optional(),
+    phone: z.string().optional(),
+    address: z.string().optional(),
+    bio: z.string().optional(),
+    skills: z.string().optional(),
+    resumeUrl: z.string().optional(),
+    education: z.string().optional(),
+    qualification: z.string().optional(),
+    avatar: z.string().optional(),
+  });
+
+  try {
+    const updates = updateSchema.parse(req.body);
+    const [updated] = await db.update(usersTable)
+      .set(updates)
+      .where(eq(usersTable.id, req.session.userId))
+      .returning();
+      
+    res.json(updated);
+  } catch (err: any) {
+    res.status(400).json({ error: err.message || "Update failed." });
+  }
 });
 
 async function handleSocialLogin(req: any, res: any, ghUser: any, primaryEmail: string, provider: "google"|"facebook"|"github") {

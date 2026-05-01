@@ -1,10 +1,16 @@
 import cron from "node-cron";
 import { db } from "@workspace/db";
-import { jobsTable, usersTable } from "@workspace/db/schema";
+import { jobsTable, usersTable, applicationsTable } from "@workspace/db/schema";
 import { gte, lte, and } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import { logger } from "./index";
-import { sendDailyJobUpdateEmail, sendDailyJobOpeningsEmail } from "./lib/email-service";
+import { 
+  sendDailyJobUpdateEmail, 
+  sendDailyJobOpeningsEmail,
+  sendJobOpeningReminderEmail,
+  sendJobClosingSoonEmail
+} from "./lib/email-service";
+import { eq } from "drizzle-orm";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.ethereal.email",
@@ -142,6 +148,61 @@ export function setupCronJobs() {
       logger.info("Daily job openings emails sent");
     } catch (error) {
       logger.error(error, "Failed to run daily job openings task");
+    }
+  });
+
+  // Job Opening Notifications - Every day at 6 AM
+  cron.schedule("0 6 * * *", async () => {
+    logger.info("Checking for jobs opening today...");
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const openingJobs = await db.select().from(jobsTable).where(eq(jobsTable.startDate, today));
+
+      for (const job of openingJobs) {
+        // Find pre-registered users for this job
+        const preRegistered = await db
+          .select({
+            email: applicationsTable.applicantEmail,
+            name: applicationsTable.applicantName
+          })
+          .from(applicationsTable)
+          .where(and(eq(applicationsTable.jobId, job.id), eq(applicationsTable.status, "Pre-Registered")));
+
+        for (const user of preRegistered) {
+          await sendJobOpeningReminderEmail(job.id, user.email, user.name);
+        }
+      }
+    } catch (error) {
+      logger.error(error, "Failed to run job opening notifications task");
+    }
+  });
+
+  // Job Closing Notifications - Every day at 10 AM
+  cron.schedule("0 10 * * *", async () => {
+    logger.info("Checking for jobs closing soon...");
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      // Closing tomorrow
+      const closingTomorrow = await db.select().from(jobsTable).where(eq(jobsTable.endDate, tomorrowStr));
+      // Closing today
+      const closingToday = await db.select().from(jobsTable).where(eq(jobsTable.endDate, todayStr));
+
+      const users = await db.select().from(usersTable);
+
+      for (const user of users) {
+        for (const job of closingTomorrow) {
+          await sendJobClosingSoonEmail(job.id, user.email, user.name, true);
+        }
+        for (const job of closingToday) {
+          await sendJobClosingSoonEmail(job.id, user.email, user.name, false);
+        }
+      }
+    } catch (error) {
+      logger.error(error, "Failed to run job closing notifications task");
     }
   });
 

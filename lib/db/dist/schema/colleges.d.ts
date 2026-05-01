@@ -762,9 +762,9 @@ export declare const examResultsTable: import("drizzle-orm/pg-core").PgTableWith
     dialect: "pg";
 }>;
 export declare const insertCollegeSchema: import("zod/v4").ZodObject<{
-    location: import("zod/v4").ZodString;
     name: import("zod/v4").ZodString;
     qualification: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
+    location: import("zod/v4").ZodString;
     city: import("zod/v4").ZodString;
     state: import("zod/v4").ZodString;
     collegeCode: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;
@@ -804,8 +804,8 @@ export declare const insertCollegeFeeSchema: import("zod/v4").ZodObject<{
     in: {};
 }>;
 export declare const insertExamResultSchema: import("zod/v4").ZodObject<{
-    userId: import("zod/v4").ZodInt;
     examId: import("zod/v4").ZodInt;
+    userId: import("zod/v4").ZodInt;
     score: import("zod/v4").ZodInt;
     totalMarks: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodInt>>;
     percentile: import("zod/v4").ZodOptional<import("zod/v4").ZodNullable<import("zod/v4").ZodString>>;

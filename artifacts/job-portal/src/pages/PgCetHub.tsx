@@ -74,14 +74,6 @@ export default function PgCetHub() {
     ? materials
     : materials?.filter(m => m.examId === selectedExam);
 
-  const pgcetQuickLinks = [
-    { label: "KEA Official Portal", url: "https://kea.kar.nic.in/", description: "Main portal for all Karnataka CET exams" },
-    { label: "KEA PGCET 2026 Home", url: "https://kea.kar.nic.in/pgcet2026", description: "Direct link to latest notifications" },
-    { label: "Official Syllabus", url: "https://kea.kar.nic.in/syllabus", description: "Subject-wise syllabus and exam pattern" },
-    { label: "Hall Ticket Download", url: "https://kea.kar.nic.in/admissions", description: "Get your admit cards here" },
-    { label: "PGCET Rank Card", url: "https://kea.kar.nic.in/results", description: "View your score and merit rank" },
-    { label: "Option Entry Portal", url: "https://kea.kar.nic.in/cetonline", description: "Select your colleges for counseling" },
-  ];
 
   if (isExamsLoading || isMaterialsLoading) {
     return (
@@ -149,41 +141,6 @@ export default function PgCetHub() {
         </div>
       </motion.div>
 
-      {/* Official Links Grid */}
-      <motion.section variants={itemVariants} className="space-y-12">
-        <div className="flex items-center gap-6">
-          <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-            <ExternalLink className="w-8 h-8" />
-          </div>
-          <div>
-            <h2 className="text-4xl font-display font-black text-foreground tracking-tight">Verified Access</h2>
-            <p className="text-muted-foreground font-medium">One-click navigation to essential government portals.</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {pgcetQuickLinks.map((link) => (
-            <motion.a
-              whileHover={{ y: -8, scale: 1.02 }}
-              key={link.label}
-              href={link.url}
-              target="_blank"
-              rel="noreferrer"
-              className="group bg-card p-8 rounded-[2.5rem] border border-border/50 hover:border-primary/30 hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] transition-all flex flex-col justify-between"
-            >
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                </div>
-                <h3 className="font-black text-xl text-foreground group-hover:text-primary transition-colors">{link.label}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed font-medium">{link.description}</p>
-              </div>
-              <div className="mt-8 flex items-center text-primary font-black text-xs uppercase tracking-widest gap-2">
-                Launch Portal <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
-              </div>
-            </motion.a>
-          ))}
-        </div>
-      </motion.section>
 
       {/* Exam Timeline / Application Guide */}
       <motion.section variants={itemVariants} className="space-y-12">

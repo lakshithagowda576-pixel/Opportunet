@@ -14,6 +14,13 @@ export const usersTable = pgTable("users", {
   provider: authProviderEnum("provider").notNull().default("email"),
   providerId: text("provider_id"),
   avatar: text("avatar"),
+  phone: text("phone"),
+  address: text("address"),
+  bio: text("bio"),
+  skills: text("skills"),
+  resumeUrl: text("resume_url"),
+  education: text("education"),
+  qualification: text("qualification"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

@@ -26,6 +26,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   useEffect(() => {
     const currentMonth = new Date().getMonth();
     const lastShown = localStorage.getItem("lastMonthlyUpdate");
+    
     if (lastShown !== currentMonth.toString()) {
       const timer = setTimeout(() => {
         setShowMonthlyUpdate(true);
@@ -33,6 +34,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       }, 2000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, []);
 
   useEffect(() => {

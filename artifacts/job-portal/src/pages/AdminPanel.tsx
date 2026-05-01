@@ -17,11 +17,13 @@ const apiFetch = (path: string, opts?: RequestInit) =>
 type AdminTab = "dashboard" | "applications" | "hr-emails" | "users";
 
 const STATUS_COLORS: Record<string, string> = {
+  "Pre-Registered": "bg-slate-100 text-slate-800 border-slate-200",
   Pending: "bg-yellow-100 text-yellow-800 border-yellow-200",
   Reviewed: "bg-blue-100 text-blue-800 border-blue-200",
   Interview: "bg-purple-100 text-purple-800 border-purple-200",
   Offered: "bg-green-100 text-green-800 border-green-200",
   Rejected: "bg-red-100 text-red-800 border-red-200",
+  Redirected: "bg-indigo-100 text-indigo-800 border-indigo-200",
 };
 
 export default function AdminPanel() {
@@ -31,6 +33,7 @@ export default function AdminPanel() {
   const qc = useQueryClient();
   const [activeTab, setActiveTab] = useState<AdminTab>("dashboard");
   const [jobFilter, setJobFilter] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
 
   // Redirect if not admin or hr
   if (!user || (user.role !== "admin" && user.role !== "hr")) {
@@ -170,12 +173,16 @@ export default function AdminPanel() {
               <h4 className="font-semibold text-sm mb-3">Applications by Status</h4>
               <div className="space-y-2">
                 {Object.entries((stats as any)?.byStatus || {}).map(([status, count]) => (
-                  <div key={status} className="flex items-center justify-between text-sm">
+                  <button 
+                    key={status} 
+                    onClick={() => { setStatusFilter(status); setActiveTab("applications"); }}
+                    className="w-full flex items-center justify-between text-sm p-1.5 rounded-lg hover:bg-secondary transition-colors"
+                  >
                     <span className={cn("px-2 py-0.5 rounded-full border text-xs font-semibold", STATUS_COLORS[status] || "bg-secondary text-secondary-foreground border-border")}>
                       {status}
                     </span>
                     <span className="font-bold">{count as number}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -228,8 +235,19 @@ export default function AdminPanel() {
       {activeTab === "applications" && (
         <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
           <div className="p-5 border-b border-border flex items-center justify-between flex-wrap gap-3">
-            <h3 className="font-bold text-base flex items-center gap-2"><FileText className="w-5 h-5 text-primary" /> All Applications ({(applications as any[]).filter((app: any) => !jobFilter || app.jobId === jobFilter).length})</h3>
+            <h3 className="font-bold text-base flex items-center gap-2">
+              <FileText className="w-5 h-5 text-primary" /> 
+              All Applications ({(applications as any[]).filter((app: any) => (!jobFilter || app.jobId === jobFilter) && (!statusFilter || app.status === statusFilter)).length})
+            </h3>
             <div className="flex items-center gap-2 flex-wrap">
+              <select 
+                value={statusFilter || ""} 
+                onChange={e => setStatusFilter(e.target.value || null)}
+                className="px-3 py-1.5 rounded-lg border border-border text-sm bg-background text-foreground outline-none hover:border-primary transition-colors"
+              >
+                <option value="">All Statuses</option>
+                {Object.keys(STATUS_COLORS).map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
               {user.role === "hr" && (
                 <select 
                   value={jobFilter || ""} 
@@ -241,6 +259,15 @@ export default function AdminPanel() {
                     <option key={job.id} value={job.id}>{job.title} - {job.company}</option>
                   ))}
                 </select>
+              )}
+              {(jobFilter || statusFilter) && (
+                <button 
+                  onClick={() => { setJobFilter(null); setStatusFilter(null); }}
+                  className="p-1.5 rounded-lg text-red-500 hover:bg-red-50 transition-colors"
+                  title="Clear Filters"
+                >
+                  <XCircle className="w-4 h-4" />
+                </button>
               )}
               <button onClick={() => qc.invalidateQueries({ queryKey: ["admin-applications"] })} className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
                 <RefreshCw className="w-4 h-4" />
@@ -262,7 +289,9 @@ export default function AdminPanel() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {(applications as any[]).filter((app: any) => !jobFilter || app.jobId === jobFilter).map((app: any) => (
+                  {(applications as any[])
+                    .filter((app: any) => (!jobFilter || app.jobId === jobFilter) && (!statusFilter || app.status === statusFilter))
+                    .map((app: any) => (
                     <tr key={app.id} className="hover:bg-secondary/20 transition-colors">
                       <td className="py-3 px-4">
                         <p className="font-semibold text-foreground">{app.applicantName}</p>
@@ -281,7 +310,7 @@ export default function AdminPanel() {
                           onChange={e => statusMutation.mutate({ id: app.id, status: e.target.value })}
                           className={cn("text-xs font-semibold px-2 py-1 rounded-lg border cursor-pointer outline-none", STATUS_COLORS[app.status])}
                         >
-                          {["Pending", "Reviewed", "Interview", "Offered", "Rejected"].map(s => (
+                          {Object.keys(STATUS_COLORS).map(s => (
                             <option key={s} value={s}>{s}</option>
                           ))}
                         </select>

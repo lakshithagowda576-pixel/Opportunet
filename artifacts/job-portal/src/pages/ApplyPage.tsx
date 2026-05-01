@@ -61,6 +61,9 @@ export default function ApplyPage() {
         ...prev,
         applicantName: user.name,
         applicantEmail: user.email,
+        applicantPhone: user.phone || "",
+        applicantAddress: user.address || "",
+        resumeUrl: user.resumeUrl || "",
       }));
     }
   }, [user, isAuthLoading]);
@@ -434,7 +437,9 @@ export default function ApplyPage() {
                         </div>
                         <div>
                           <p className="font-black text-emerald-700 text-sm">Resume Attached!</p>
-                          <p className="text-[10px] text-emerald-600 mt-1">Click to replace</p>
+                          <p className="text-[10px] text-emerald-600 mt-1">
+                            {formData.resumeUrl === user?.resumeUrl ? "(Using Profile Resume)" : "(Uploaded File)"} - Click to replace
+                          </p>
                         </div>
                       </>
                     ) : (
@@ -449,6 +454,16 @@ export default function ApplyPage() {
                       </>
                     )}
                   </div>
+
+                  {user?.resumeUrl && !formData.resumeUrl && (
+                    <button
+                      type="button"
+                      onClick={() => setFormData(p => ({ ...p, resumeUrl: user.resumeUrl || "" }))}
+                      className="w-full py-3 rounded-xl border-2 border-primary/20 text-primary font-bold hover:bg-primary/5 transition-all text-sm flex items-center justify-center gap-2"
+                    >
+                      <Sparkles className="w-4 h-4" /> Use Resume from My Profile
+                    </button>
+                  )}
 
                   <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
                     <label className="flex items-start gap-3 cursor-pointer group">

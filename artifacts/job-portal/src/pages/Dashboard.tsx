@@ -15,7 +15,8 @@ import {
   GraduationCap,
   LayoutDashboard,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Calendar
 } from "lucide-react";
 import { JobCard } from "@/components/JobCard";
 import { cn } from "@/lib/utils";
@@ -53,6 +54,7 @@ export default function Dashboard() {
   const nonItJobs = jobs?.filter(j => j.category === "NON_IT").slice(0, 3) || [];
   const stateGovtJobs = jobs?.filter(j => j.category === "STATE_GOVT").slice(0, 3) || [];
   const centralGovtJobs = jobs?.filter(j => j.category === "CENTRAL_GOVT").slice(0, 3) || [];
+  const upcomingJobs = jobs?.filter(j => new Date(j.startDate) > new Date()).slice(0, 4) || [];
 
   const stats = [
     {
@@ -229,6 +231,93 @@ export default function Dashboard() {
           </motion.div>
         ))}
       </section>
+
+      {/* Upcoming Opportunities */}
+      {upcomingJobs.length > 0 && (
+        <motion.section variants={itemVariants} className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[3rem] p-10 border border-indigo-500/20 shadow-2xl overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 blur-[80px] -z-0"></div>
+          <div className="relative z-10">
+            <div className="flex justify-between items-center mb-10">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-display font-black text-white">Upcoming Opportunities</h2>
+                  <p className="text-indigo-300/60 text-sm font-medium uppercase tracking-widest">Pre-Register for Fast Application</p>
+                </div>
+              </div>
+              <Link href="/jobs" className="px-6 py-3 rounded-xl bg-white/10 text-white text-sm font-black hover:bg-white/20 transition-all backdrop-blur-xl border border-white/10">
+                View All
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {upcomingJobs.map(job => (
+                <div key={job.id} className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 hover:border-white/20 transition-all group">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-[10px] font-black uppercase tracking-widest border border-indigo-500/30">
+                      {job.category}
+                    </span>
+                    <Calendar className="w-4 h-4 text-indigo-400" />
+                  </div>
+                  <h4 className="font-bold text-white mb-1 truncate group-hover:text-indigo-300 transition-colors">{job.title}</h4>
+                  <p className="text-xs text-indigo-100/40 font-medium mb-6 flex items-center gap-1.5">
+                    <Building2 className="w-3 h-3" /> {job.company}
+                  </p>
+                  <Link href="/jobs" className="w-full py-2.5 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all">
+                    Pre-Register <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.section>
+      )}
+
+      {/* Recent Activity */}
+      {applications && applications.length > 0 && (
+        <motion.section variants={itemVariants} className="bg-card rounded-[3rem] p-10 border border-border shadow-sm">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-display font-black text-foreground flex items-center gap-3">
+              <FileText className="w-8 h-8 text-primary" /> Your Recent Activity
+            </h2>
+            <Link href="/applications" className="text-sm font-bold text-primary hover:underline">
+              Track All Applications
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {applications.slice(0, 3).map((app: any) => (
+              <div key={app.id} className="p-6 bg-secondary/30 rounded-2xl border border-border/50 hover:bg-secondary/50 transition-all group">
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center shadow-sm">
+                    {app.examId ? <GraduationCap className="w-5 h-5 text-primary" /> : <Briefcase className="w-5 h-5 text-primary" />}
+                  </div>
+                  <span className={cn(
+                    "px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest border",
+                    app.status === 'Pending' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                    app.status === 'Offered' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                    'bg-blue-100 text-blue-700 border-blue-200'
+                  )}>
+                    {app.status}
+                  </span>
+                </div>
+                <h4 className="font-bold text-foreground mb-1 truncate">
+                  {app.examId ? app.examName : app.job?.title || "Application"}
+                </h4>
+                <p className="text-xs text-muted-foreground font-medium mb-4">
+                  {app.examId ? "KEA Karnataka" : app.job?.company || "Company"}
+                </p>
+                <div className="pt-4 border-t border-border/50 flex justify-between items-center">
+                   <span className="text-[10px] font-black text-muted-foreground uppercase">Applied On</span>
+                   <span className="text-xs font-bold text-foreground">
+                     {new Date(app.appliedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                   </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.section>
+      )}
 
       {/* Main Content Sections */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">

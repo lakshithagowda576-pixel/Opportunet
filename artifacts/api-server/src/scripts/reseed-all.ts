@@ -72,24 +72,24 @@ async function reseedAll() {
     await db.insert(studyMaterialsTable).values([
       // MBA Materials
       { examId: mbaId, title: "MBA PGCET Official Syllabus 2026", subject: "Syllabus", type: "PDF", description: "Comprehensive syllabus and exam pattern for MBA.", url: "https://kea.kar.nic.in/pgcet2026/syllabus_mba.pdf" },
-      { examId: mbaId, title: "Quantitative Aptitude Video Classes", subject: "Mathematics", type: "Video", description: "Complete video playlist for MBA aptitude preparation.", url: "https://www.youtube.com/playlist?list=PLBicN4I0y_r-Y3e4kYyI_SnyPqU_oE8X5" },
-      { examId: mbaId, title: "Logical Reasoning Full Course", subject: "Reasoning", type: "Video", description: "Expert lectures on logical and analytical reasoning.", url: "https://www.youtube.com/playlist?list=PLBicN4I0y_r_3y5YJp9G6k18b8R-1k-6p" },
+      { examId: mbaId, title: "Quantitative Aptitude Video Classes", subject: "Mathematics", type: "Video", description: "Complete video playlist for MBA aptitude preparation.", url: "https://www.youtube.com/watch?v=K-HMk9dw8Qk" },
+      { examId: mbaId, title: "Logical Reasoning Full Course", subject: "Reasoning", type: "Video", description: "Expert lectures on logical and analytical reasoning.", url: "https://www.youtube.com/watch?v=tTrT0xmSuPA" },
       { examId: mbaId, title: "MBA Previous Year Papers (2020-2025)", subject: "Previous Papers", type: "PDF", description: "Consolidated archive of solved MBA PGCET papers.", url: "https://kea.kar.nic.in/pgcet/mba_papers.zip" },
       { examId: mbaId, title: "MBA Proficiency Test (Full Length Quiz)", subject: "Mock Test", type: "Practice_Test", description: "Timed mock test covering all sections of the MBA PGCET.", url: "https://www.indiabix.com/online-test/aptitude-test/" },
       { examId: mbaId, title: "English Language Mastery Notes", subject: "Verbal Ability", type: "Notes", description: "Grammar, RC, and vocabulary notes for MBA.", url: "https://www.geeksforgeeks.org/english-grammar-for-competitive-exams/" },
       
       // MCA Materials
       { examId: mcaId, title: "MCA PGCET Official Syllabus 2026", subject: "Syllabus", type: "PDF", description: "Detailed MCA syllabus including Mathematics and Computer sections.", url: "https://kea.kar.nic.in/pgcet2026/syllabus_mca.pdf" },
-      { examId: mcaId, title: "Computer Awareness & Architecture Classes", subject: "Computer Science", type: "Video", description: "Video series on hardware, OS, and computer fundamentals.", url: "https://www.youtube.com/playlist?list=PLBicN4I0y_r9B_1p7C4V5E1v_7gO-7Y8m" },
-      { examId: mcaId, title: "Discrete Mathematics - NPTEL Course", subject: "Mathematics", type: "Video", description: "In-depth mathematical concepts for MCA entrance.", url: "https://nptel.ac.in/courses/106106094" },
+      { examId: mcaId, title: "Computer Awareness & Architecture Classes", subject: "Computer Science", type: "Video", description: "Video series on hardware, OS, and computer fundamentals.", url: "https://www.youtube.com/watch?v=KUa2TORY23Q" },
+      { examId: mcaId, title: "Discrete Mathematics - NPTEL Course", subject: "Mathematics", type: "Video", description: "In-depth mathematical concepts for MCA entrance.", url: "https://www.youtube.com/watch?v=Z03yYqARnms" },
       { examId: mcaId, title: "MCA Previous Year Solved Papers", subject: "Previous Papers", type: "PDF", description: "KEA archive of original MCA PGCET question papers.", url: "https://kea.kar.nic.in/pgcet/mca_papers.zip" },
       { examId: mcaId, title: "Computer Science IQ Quiz", subject: "Mock Test", type: "Practice_Test", description: "Interactive test on data structures, OS, and C programming.", url: "https://www.indiabix.com/online-test/computer-science-test/" },
       { examId: mcaId, title: "General Awareness for MCA Notes", subject: "General Knowledge", type: "Notes", description: "Important current affairs and static GK for MCA.", url: "https://www.gktoday.in/current-affairs/" },
       
       // M.Tech Materials
       { examId: mtechId, title: "M.Tech PGCET Syllabus - All Branches", subject: "Syllabus", type: "PDF", description: "Common and branch-specific syllabus for M.Tech/ME.", url: "https://kea.kar.nic.in/pgcet2026/syllabus_mtech.pdf" },
-      { examId: mtechId, title: "Engineering Mathematics - NPTEL Video Series", subject: "Engineering Maths", type: "Video", description: "Advanced calculus and linear algebra for M.Tech.", url: "https://nptel.ac.in/courses/111104086" },
-      { examId: mtechId, title: "Technical Subject Masterclass (GATE/PGCET)", subject: "Technical", type: "Video", description: "High-level technical lectures for competitive engineering exams.", url: "https://www.youtube.com/playlist?list=PLBicN4I0y_r-N1Z_uM3Z4kX7E1v8X6z-Y" },
+      { examId: mtechId, title: "Engineering Mathematics - NPTEL Video Series", subject: "Engineering Maths", type: "Video", description: "Advanced calculus and linear algebra for M.Tech.", url: "https://www.youtube.com/watch?v=Me4TZN4qRuo" },
+      { examId: mtechId, title: "Technical Subject Masterclass (GATE/PGCET)", subject: "Technical", type: "Video", description: "High-level technical lectures for competitive engineering exams.", url: "https://www.youtube.com/watch?v=cTIBsZFk_ck" },
       { examId: mtechId, title: "M.Tech Previous Year Papers Archive", subject: "Previous Papers", type: "PDF", description: "Branch-wise question papers from last 5 years.", url: "https://kea.kar.nic.in/pgcet/mtech_papers.zip" },
       { examId: mtechId, title: "Engineering Math Mock Challenge", subject: "Mock Test", type: "Practice_Test", description: "Challenge your math skills with this PGCET-style quiz.", url: "https://www.indiabix.com/online-test/engineering-mathematics-test/" },
       { examId: mtechId, title: "General Awareness & Verbal Ability Notes", subject: "General Aptitude", type: "Notes", description: "Quick revision notes for the common aptitude section.", url: "https://www.fresherslive.com/online-test/general-awareness-test/questions-and-answers" },

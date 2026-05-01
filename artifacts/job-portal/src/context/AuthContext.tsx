@@ -6,6 +6,13 @@ interface AuthUser {
   email: string;
   role: "user" | "admin" | "hr";
   avatar?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  resumeUrl?: string | null;
+  education?: string | null;
+  qualification?: string | null;
+  bio?: string | null;
+  skills?: string | null;
   createdAt?: string;
 }
 

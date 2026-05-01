@@ -1,10 +1,11 @@
 import cron from "node-cron";
 import { db } from "@workspace/db";
-import { jobsTable, usersTable } from "@workspace/db/schema";
-import { gte, lte, and } from "drizzle-orm";
+import { jobsTable, usersTable, applicationsTable } from "@workspace/db/schema";
+import { gte, lte, and, sql } from "drizzle-orm";
 import nodemailer from "nodemailer";
 import { logger } from "./index";
-import { sendDailyJobUpdateEmail, sendDailyJobOpeningsEmail } from "./lib/email-service";
+import { sendDailyJobUpdateEmail, sendDailyJobOpeningsEmail, sendJobStartingSoonEmail, sendJobClosingSoonEmail } from "./lib/email-service";
+import { eq } from "drizzle-orm";
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "smtp.ethereal.email",
@@ -142,6 +143,58 @@ export function setupCronJobs() {
       logger.info("Daily job openings emails sent");
     } catch (error) {
       logger.error(error, "Failed to run daily job openings task");
+    }
+  });
+
+  // Job Starting Tomorrow Notification - Every day at 9:30 AM
+  cron.schedule("30 9 * * *", async () => {
+    logger.info("Running job start reminder task...");
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+      const startingJobs = await db.select().from(jobsTable).where(eq(jobsTable.startDate, tomorrowStr));
+
+      for (const job of startingJobs) {
+        // Find all pre-registered users for this job
+        const preRegistered = await db
+          .select()
+          .from(applicationsTable)
+          .where(and(eq(applicationsTable.jobId, job.id), eq(applicationsTable.status, "Pre-Registered" as any)));
+
+        for (const app of preRegistered) {
+          await sendJobStartingSoonEmail(app.applicantEmail, app.applicantName, job);
+        }
+      }
+    } catch (error) {
+      logger.error(error, "Failed to run job start reminder task");
+    }
+  });
+
+  // Job Closing Tomorrow Notification - Every day at 10:30 AM
+  cron.schedule("30 10 * * *", async () => {
+    logger.info("Running job closing reminder task...");
+    try {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+      const closingJobs = await db.select().from(jobsTable).where(eq(jobsTable.endDate, tomorrowStr));
+
+      for (const job of closingJobs) {
+        // Find all applicants for this job (excluding rejected)
+        const applicants = await db
+          .select()
+          .from(applicationsTable)
+          .where(and(eq(applicationsTable.jobId, job.id), sql`${applicationsTable.status} != 'Rejected'`));
+
+        for (const app of applicants) {
+          await sendJobClosingSoonEmail(app.applicantEmail, app.applicantName, job);
+        }
+      }
+    } catch (error) {
+      logger.error(error, "Failed to run job closing reminder task");
     }
   });
 

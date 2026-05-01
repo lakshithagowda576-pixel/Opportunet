@@ -10,9 +10,78 @@ import {
 } from "@workspace/api-zod";
 import { buildDefaultHrEmail, normalizeJobRecord } from "../lib/normalize-job";
 import { requireAuth } from "../middleware/requireAuth";
-import { sendApplicationConfirmationEmail } from "../lib/email-service";
+import { sendApplicationConfirmationEmail, sendPreRegistrationConfirmationEmail } from "../lib/email-service";
+import bcrypt from "bcrypt";
 
 const router: IRouter = Router();
+
+router.post("/applications/pre-register", async (req, res) => {
+  const { name, email, password, jobId } = req.body;
+
+  if (!email || !jobId) {
+    res.status(400).json({ error: "Email and Job ID are required" });
+    return;
+  }
+
+  try {
+    // 1. Check if user already exists, if not create one (like a mini-registration)
+    let [user] = await db.select().from(usersTable).where(eq(usersTable.email, email));
+    
+    if (!user && name && password) {
+      const passwordHash = await bcrypt.hash(password, 10);
+      const [newUser] = await db.insert(usersTable).values({
+        name,
+        email,
+        passwordHash,
+        provider: "email",
+        role: "user"
+      }).returning();
+      user = newUser;
+      
+      // Auto-login after pre-reg registration
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.userRole = user.role;
+      }
+    }
+
+    // 2. Create the application record with "Pre-Registered" status
+    const [existing] = await db
+      .select()
+      .from(applicationsTable)
+      .where(and(eq(applicationsTable.jobId, jobId), eq(applicationsTable.applicantEmail, email)));
+
+    if (existing) {
+      res.status(400).json({ error: "You are already pre-registered or applied for this job." });
+      return;
+    }
+
+    // Verify user exists if ID is provided
+    let finalUserId: number | null = user?.id || null;
+    if (finalUserId) {
+      const [userExists] = await db.select().from(usersTable).where(eq(usersTable.id, finalUserId));
+      if (!userExists) finalUserId = null;
+    }
+
+    const [app] = await db.insert(applicationsTable).values({
+      jobId,
+      userId: finalUserId,
+      applicantName: name || user?.name || email.split('@')[0],
+      applicantEmail: email,
+      status: "Pre-Registered" as any,
+      acceptedTerms: true,
+    }).returning();
+
+    // 3. Send confirmation email
+    sendPreRegistrationConfirmationEmail(app.id);
+
+    res.status(201).json({ success: true, applicationId: app.id });
+  } catch (err: any) {
+    console.error("Pre-registration error details:", err);
+    res.status(500).json({ error: err.message || "Pre-registration failed" });
+  }
+});
+
 router.use("/applications", requireAuth);
 
 async function getSessionUser(req: any) {
@@ -55,7 +124,9 @@ router.get("/applications", async (req, res) => {
   if (jobId) {
     baseQuery = baseQuery.where(eq(applicationsTable.jobId, jobId));
   } else if (!isPrivileged) {
-    baseQuery = baseQuery.where(eq(applicationsTable.applicantEmail, user.email));
+    baseQuery = baseQuery.where(
+      sql`${applicationsTable.userId} = ${user.id} OR ${applicationsTable.applicantEmail} = ${user.email}`
+    );
   }
 
   // Apply ordering and execute query
@@ -179,14 +250,18 @@ router.post("/applications/track", async (req, res) => {
     return;
   }
 
+  const user = await getSessionUser(req);
+
   // Create a tracking record as an application with Redirected status
   const [app] = await db
     .insert(applicationsTable)
     .values({
       jobId,
-      applicantName,
-      applicantEmail,
+      userId: user?.id,
+      applicantName: user?.name || applicantName,
+      applicantEmail: user?.email || applicantEmail,
       status: "Redirected" as any,
+      acceptedTerms: true,
     })
     .returning();
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useListJobs, ListJobsCategory } from "@workspace/api-client-react";
 import { Search, Filter, Loader2, Calendar } from "lucide-react";
+import { motion } from "framer-motion";
 import { JobCard } from "@/components/JobCard";
 import { cn } from "@/lib/utils";
 
@@ -45,14 +46,24 @@ export default function JobsDirectory() {
   ];
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto">
-      <div className="flex flex-col gap-2">
+    <div className="space-y-8 max-w-6xl mx-auto animate-in fade-in duration-500">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex flex-col gap-2"
+      >
         <h1 className="text-3xl font-display font-bold text-foreground">Job Directory</h1>
         <p className="text-muted-foreground text-lg">Find and apply for the best opportunities across various sectors.</p>
-      </div>
+      </motion.div>
 
       {/* Search and Filters */}
-      <div className="bg-card p-6 rounded-3xl shadow-xl border border-border space-y-6">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="bg-card p-6 rounded-3xl shadow-xl border border-border space-y-6"
+      >
         <div className="relative">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
           <input 
@@ -111,7 +122,7 @@ export default function JobsDirectory() {
              </div>
            </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* Results */}
       {isLoading ? (
@@ -119,7 +130,12 @@ export default function JobsDirectory() {
           <Loader2 className="w-12 h-12 animate-spin text-primary" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
           {filteredJobs?.length ? (
             filteredJobs.map((job) => (
               <JobCard key={job.id} job={job} />
@@ -135,7 +151,7 @@ export default function JobsDirectory() {
               </p>
             </div>
           )}
-        </div>
+        </motion.div>
       )}
     </div>
   );

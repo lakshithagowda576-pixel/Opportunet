@@ -354,6 +354,7 @@ export function JobCard({ job, applicantCount }: JobCardProps) {
       <Dialog open={showPreRegister} onOpenChange={setShowPreRegister}>
         <DialogContent className="max-w-md rounded-[2.5rem] p-8">
           <PreRegisterForm 
+            jobId={job.id}
             jobTitle={job.title}
             company={job.company}
             onClose={() => setShowPreRegister(false)}
